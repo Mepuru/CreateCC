@@ -8,7 +8,7 @@
 只依赖标准库（zipfile / json / re / argparse）。
 
 用法：
-    python scripts/scan_mods.py --mods "D:\\Minecraft\\.minecraft\\versions\\Mechanomania-1.1.12.0\\mods"
+    python scripts/scan_mods.py --mods "<你的实例目录>\\mods"
     python scripts/scan_mods.py --mods <mods目录> --full          # 额外列出全部 mod
     python scripts/scan_mods.py --mods <mods目录> > docs/_mods_scan.txt
 

@@ -40,18 +40,18 @@ python scripts\dump_create_peripherals.py > docs\_generated_peripherals.txt
 ## 30 秒上手
 
 ```bat
-:: 0) 环境变了才需要：重扫用户实例（mod 列表 + 实际可用的 CC 集成面）
-python D:\WorkSpace\CreateCC\scripts\scan_mods.py --mods "D:\Minecraft\.minecraft\versions\Mechanomania-1.1.12.0\mods" > D:\WorkSpace\CreateCC\docs\_mods_scan.txt
-python D:\WorkSpace\CreateCC\scripts\dump_jar_peripherals.py --mods "D:\Minecraft\.minecraft\versions\Mechanomania-1.1.12.0\mods" --extract-rom D:\WorkSpace\CreateCC\docs\rom_extras > D:\WorkSpace\CreateCC\docs\_instance_peripherals.txt
+:: 0) 环境变了才需要：重扫你自己的实例（mod 列表 + 实际可用的 CC 集成面）
+python scripts\scan_mods.py --mods "<你的实例目录>\mods" > docs\_mods_scan.txt
+python scripts\dump_jar_peripherals.py --mods "<你的实例目录>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
 
 :: 1) 可选：刷新上游资料快照（走 gh-proxy 加速）
-python D:\WorkSpace\CreateCC\scripts\refresh_docs.py
+python scripts\refresh_docs.py
 
 :: 2) 让 Agent 干活：把任务单填好丢给它
-notepad D:\WorkSpace\CreateCC\code\templates\TASK_REQUEST.md
+notepad code\templates\TASK_REQUEST.md
 ::    → 复制成 code\<项目名>\TASK_REQUEST.md 并填写
 
-:: 3) Agent 的产出在 code\<项目名>\ ，按 README.md 里的路径拷进游戏电脑
+:: 3) Agent 的产出在 code\<项目名>\ ，按各项目的 README.md / INSTALL.md 拷进游戏电脑
 ```
 
 ## 游戏内确认现场（每次开工先跑这段）

@@ -10,8 +10,8 @@
 | 项 | 值 |
 |---|---|
 | 整合包 | Mechanomania 1.1.12.0 |
-| 实例目录 | `D:\Minecraft\.minecraft\versions\Mechanomania-1.1.12.0` |
-| mods 目录 | `…\Mechanomania-1.1.12.0\mods`（**201 个 jar**，388.9 MB） |
+| 实例目录 | `<你的实例目录>`（例如 `.minecraft\versions\<整合包名>`；本仓库不记录具体路径） |
+| mods 目录 | `<实例目录>\mods`（实测时 **201 个 jar**，约 389 MB） |
 | Minecraft | **1.21.1** |
 | 加载器 | **NeoForge 21.1.248** |
 | Create | **6.0.10**（`create-1.21.1-6.0.10.jar`） |
@@ -74,10 +74,10 @@
 
 ```bat
 :: 1) mod 列表 + 版本（含 MC/NeoForge）
-python scripts\scan_mods.py --mods "D:\Minecraft\.minecraft\versions\Mechanomania-1.1.12.0\mods" > docs\_mods_scan.txt
+python scripts\scan_mods.py --mods "<你的实例目录>\mods" > docs\_mods_scan.txt
 
 :: 2) 实例实际可用的外设 / ROM API / turtle 升级，并把附加 Lua API 抽出来存档
-python scripts\dump_jar_peripherals.py --mods "D:\Minecraft\.minecraft\versions\Mechanomania-1.1.12.0\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
+python scripts\dump_jar_peripherals.py --mods "<你的实例目录>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
 ```
 
 （两份生成物：`docs/_mods_scan.txt`、`docs/_instance_peripherals.txt`；升级 mod 后重跑并更新本文件。）

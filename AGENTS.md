@@ -2,7 +2,7 @@
 
 本文件是**后续所有 Agent 在本仓库工作时的最高优先级规范**。冲突时以本文件为准（除游戏内实测事实外）。
 
-- 工程根目录：`D:\WorkSpace\CreateCC`
+- 工程根目录：本仓库根目录（下文的 `docs/`、`code/`、`scripts/` 都相对它）
 - 目标产物：可拷贝进**游戏内电脑**运行的 `.lua` 程序（Minecraft **1.21.1** + **NeoForge** + Create **6.0.x** + CC: Tweaked）
 - 资料目录：`docs/`（一手资料快照，见 `docs/INDEX.md`）
 - 代码目录：`code/`（所有交付代码写在这里）
@@ -72,6 +72,9 @@ Create 6.0.10 ｜ CC:T 1.120.2 ｜ **未装 CC:C Bridge** ｜ 另有 6 个 mod �
    Create 专用外设（转速表/应力表/列车站/库存查询器/蛙港…）→ CC:T **通用外设**
    `inventory` / `fluid_storage` / `energy_storage`（读任意暴露物品/流体/能量能力的方块，含 Create 储罐与容器）
    → CC:T `redstone_relay`（读红石模拟量 0–15）→ 外设事件。**能读到什么必须实测**，别只看文档。
+10. `docs/_mods_scan.txt` 与 `docs/_instance_peripherals.txt` 是**本地生成**的环境快照
+    （`scripts/scan_mods.py` / `scripts/dump_jar_peripherals.py`），**不进版本库**——
+    新克隆的仓库里没有这两个文件，需要时自己对着自己的实例跑一遍。
 
 ---
 

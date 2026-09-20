@@ -19,7 +19,7 @@ python scripts\dump_create_peripherals.py
 python scripts\dump_create_peripherals.py > docs\_generated_peripherals.txt
 
 :: 扫描用户实例（换版本 / 换整合包后必跑）
-python scripts\scan_mods.py --mods "D:\Minecraft\.minecraft\versions\Mechanomania-1.1.12.0\mods" > docs\_mods_scan.txt
+python scripts\scan_mods.py --mods "<你的实例目录>\mods" > docs\_mods_scan.txt
 python scripts\scan_mods.py --mods <mods目录> --full > docs\_mods_scan.txt
 
 :: 挖实例的 CC 集成面，并把附加 Lua API 抽出来

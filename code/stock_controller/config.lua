@@ -61,9 +61,9 @@ config.rules = {
     --   block.minecraft.infested_stone_bricks = Infested Stone Bricks）
     item = "minecraft:infested_stone_bricks",
     label = "Infested Bricks",   -- 想用中文就改成 "虫蚀石砖"（CC 显示器支持中文；Create 翻页屏不行）
-    low = 128,                   -- ★ 待你确认：低于多少就补货
-    high = 512,                  -- ★ 待你确认：补到多少算够（同时是滞回上限）
-    batch = 256,                 -- ★ 每次下单数量；请求器单槽上限 256，超过会自动铺到多个槽（最多 9 槽 = 2304）
+    low = 8192,                  -- 低于 8K 就补货（用户习惯常备 10K 左右）
+    high = 10240,                -- 补到 10K 算够（同时是滞回上限：达到它才清空在途账本）
+    batch = 1024,                -- 每次下单 1024（= 4 槽 × 256）；请求器最多 9 槽，代码会自动分摊
     address = "经验",             -- frogport 的物流地址（区分大小写，必须与游戏里设置的一致）
     craft = false,               -- 虫蚀石砖一般不是合成品；如果你的包里有配方可选 true
     -- batches = 1,              -- 仅 craft = true 时用

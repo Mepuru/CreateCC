@@ -12,7 +12,7 @@ Create 原生的外设可在 docs/API_CREATE_NATIVE.md 查到；其它 addon 注
 只依赖标准库（zipfile / json / re / argparse）。
 
 用法：
-    python scripts/dump_jar_peripherals.py --mods "D:\\Minecraft\\.minecraft\\versions\\Mechanomania-1.1.12.0\\mods"
+    python scripts/dump_jar_peripherals.py --mods "<你的实例目录>\\mods"
     python scripts/dump_jar_peripherals.py some-mod.jar
     python scripts/dump_jar_peripherals.py --mods <mods目录> > docs/_instance_peripherals.txt
     python scripts/dump_jar_peripherals.py --mods <mods目录> --include-computercraft   # 连 CC:T 本体一起挖

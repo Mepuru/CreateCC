@@ -20,8 +20,8 @@
 | `API_CREATE_NATIVE.md` | Create 原生外设速查（类型名/函数/事件/wiki 链接） | 本地整理 | — | 写代码第一入口 |
 | `API_INSTANCE_ADDONS.md` | 本实例**额外**可用的外设与 ROM API（addon 提供） | 本地整理 | — | 写代码第一入口 |
 | `API_CCCBridge.md` | CC:C Bridge 外设速查（**本实例未装**，仅参考） | 本地整理 | — | 加装后可用 |
-| `_mods_scan.txt` | 生成物：mods 目录全量扫描（含每个 mod 的 id/version） | `scripts/scan_mods.py` | — | 环境证据 |
-| `_instance_peripherals.txt` | 生成物：实例 CC 集成面（外设类型名/方法候选、ROM 附加、turtle 升级） | `scripts/dump_jar_peripherals.py` | — | 环境证据 |
+| `_mods_scan.txt` | 生成物（**本地、不进版本库**）：mods 目录全量扫描（含每个 mod 的 id/version） | `scripts/scan_mods.py` | — | 环境证据 |
+| `_instance_peripherals.txt` | 生成物（**本地、不进版本库**）：实例 CC 集成面（外设类型名/方法候选、ROM 附加、turtle 升级） | `scripts/dump_jar_peripherals.py` | — | 环境证据 |
 | `_generated_peripherals.txt` | 生成物：Create 源码导出的外设清单基线 | `scripts/dump_create_peripherals.py` | — | 版本升级比对基准 |
 
 > 克隆/更新时统一走加速前缀：`https://v6.gh-proxy.org/https://github.com/...`（见 `scripts/refresh_docs.py`）。
