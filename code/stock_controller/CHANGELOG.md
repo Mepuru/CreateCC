@@ -1,5 +1,16 @@
 # CHANGELOG — stock_controller
 
+## v0.7.4 (2026-09-20, 未在游戏内验证)
+
+**下载也走代理**（`raw.githubusercontent.com` 在国内常连不上）：
+
+- `update.lua`：下载线路改为 **gh-proxy 优先 → 自动回退直连**，日志会打印用的是哪条线路
+  （`downloading main.lua via gh-proxy ... ok`）；新增 `--direct` 强制直连
+- 代理前缀：`https://v6.gh-proxy.org/https://raw.githubusercontent.com/...`
+  （已实测该形式能代理 raw 文件，HTTP 200；与 `scripts/refresh_docs.py` 克隆上游用的是同一个前缀）
+- 文档里的所有 `wget` 命令（`update.lua` / `main.lua` / `probe_peripherals.lua`）都换成代理形式，
+  并注明"代理不通时把 `https://v6.gh-proxy.org/` 去掉即可"
+
 ## v0.7.3 (2026-09-20, 未在游戏内验证)
 
 用户仍看不到按钮 + 改用 ASCII 地址 `EXP`（方案 A）。本轮：

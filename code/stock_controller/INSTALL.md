@@ -157,7 +157,7 @@ CraftOS 的 `>` 是 **shell 提示符，不是 Lua 解释器**：把 Lua 代码�
 **① 跑现成的探测脚本（推荐，两行命令）**
 
 ```
-wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/templates/probe_peripherals.lua /probe_peripherals.lua
+wget https://v6.gh-proxy.org/https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/templates/probe_peripherals.lua /probe_peripherals.lua
 probe_peripherals
 ```
 
@@ -198,23 +198,24 @@ CC:T 是**把程序读进内存运行**的：替换文件**不会**影响正在�
 为了避免"以为更新了其实没有"，项目里带了一个更新器：
 
 ```
-:: 第一次先把它下下来
-wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/stock_controller/update.lua /stock_controller/update.lua
+:: 第一次先把它下下来（默认走 gh-proxy 加速：raw.githubusercontent.com 常被墙）
+wget https://v6.gh-proxy.org/https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/stock_controller/update.lua /stock_controller/update.lua
 
-:: 以后每次更新只跑这一条
+:: 以后每次更新只跑这一条（默认 gh-proxy → 失败自动回退直连）
 stock_controller/update              :: 更新 main.lua + config.lua
 stock_controller/update --keep       :: 只更新 main.lua（保留你手改过的 config.lua）
+stock_controller/update --direct     :: 强制直连（不走代理）
 ```
 
-它会下载文件、**读回并打印 `main.lua` 里的版本号**，最后提醒你重启程序。看到
-`installed main.lua version: 0.7.0` 才算真的换上了；若是 `has NO VERSION line - it is an OLD build`，说明下载失败。
+它会下载文件（并打印用的是哪条线路）、**读回并打印 `main.lua` 里的版本号**，最后提醒你重启程序。看到
+`installed main.lua version: 0.7.3` 才算真的换上了；若是 `has NO VERSION line - it is an OLD build`，说明下载失败。
 
-手动更新（等价做法，注意**先删再下**；也适用于用 Ctrl+V 粘贴的场景）：
+手动更新（等价做法，注意**先删再下**；用 Ctrl+V 粘贴时也一样要删旧文件）：
 
 ```
 rm /stock_controller/main.lua
-wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/stock_controller/main.lua /stock_controller/main.lua
-:: 或者：edit /stock_controller/main.lua 重新粘贴
+wget https://v6.gh-proxy.org/https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/stock_controller/main.lua /stock_controller/main.lua
+:: 直连（若代理也不通）：把 https://v6.gh-proxy.org/ 去掉即可
 ```
 
 **怎么确认跑的是新版**：屏幕标题会带版本（例如 `STOCK CONTROL  v0.7`），

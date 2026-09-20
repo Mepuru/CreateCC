@@ -31,7 +31,7 @@ local LOG = "[stock] "
 
 -- 版本号：屏幕上会显示短版本（v0.7），启动日志会打印完整版本。
 -- 排查"改了文件却没生效"时先看这里——CC:T 把程序读进内存，替换文件后必须重启程序。
-local VERSION = "0.7.2"
+local VERSION = "0.7.4"
 local SHORT_VERSION = VERSION:match("^%d+%.%d+") or VERSION
 
 local function log(fmt, ...)

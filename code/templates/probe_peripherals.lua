@@ -5,7 +5,7 @@
 
 用法：
   - 一键版（电脑能上网时）：
-      wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/templates/probe_peripherals.lua /probe_peripherals.lua
+      wget https://v6.gh-proxy.org/https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/templates/probe_peripherals.lua /probe_peripherals.lua
       probe_peripherals
   - 手动版：edit /probe_peripherals.lua 粘贴本文件 → 运行 `probe_peripherals`
   - ⚠️ 别把代码直接粘到 shell 的 `>` 提示符里（那是命令行，不是 Lua），会报 No such program
