@@ -541,12 +541,14 @@ local function buildButtons(y, width)
   for _, btn in ipairs(buttons) do
     btn.x = x
     btn.y = y
+    -- 统一用"亮底 + 黑字"保证对比度：普通（非高级）显示器只有灰阶时，
+    -- 原来的"灰底白字"几乎看不见，这是之前"看不到按钮"的可疑原因之一。
     if btn.id == "order" then
       btn.bg, btn.fg = colors.green, colors.black
     elseif btn.id == "auto" then
       btn.bg, btn.fg = state.auto and colors.lime or colors.red, colors.black
     else
-      btn.bg, btn.fg = colors.grey, colors.white
+      btn.bg, btn.fg = colors.lightBlue, colors.black
     end
     x = x + #btn.label + 1
   end
@@ -677,6 +679,19 @@ local function render()
     end
   end
 
+  -- 自我诊断：告诉用户/日志"按钮画在哪"或"为什么没画"（免得再靠猜）
+  if showButtons and buttonRow then
+    state.buttonsInfo = ("buttons at row %d of %d (display %dx%d, colour=%s)")
+      :format(buttonRow, height, width, height, tostring(canColor))
+  elseif displayKind == "monitor" then
+    state.buttonsInfo = ("buttons OFF - need an ADVANCED monitor and a screen at least 5 rows tall "
+      .. "(display %dx%d, colour=%s)"):format(width, height, tostring(canColor))
+    lines[#lines + 1] = fit("no buttons: advanced monitor + h>=5", limit)
+    lineColors[#lineColors + 1] = colors.orange
+  else
+    state.buttonsInfo = ("buttons OFF - display is not a monitor (" .. tostring(displayKind) .. ")")
+  end
+
   local okRender = pcall(function()
     display.clear()
     if canColor then
@@ -788,9 +803,13 @@ if displayKind == "monitor" then
   local okColour, isColour = pcall(display.isColour)
   if okColour and isColour == false then
     log("note: this is a NORMAL monitor - touch buttons need an ADVANCED monitor to work")
-  else
-    log("touch buttons enabled (order / auto / target - / +) just below the data on the monitor")
   end
+end
+
+-- 立刻渲染一帧（不必等第一个定时器），并把"按钮画在哪 / 为什么没画"打进日志
+render()
+if state.buttonsInfo then
+  log(state.buttonsInfo)
 end
 
 local timer = os.startTimer(POLL)

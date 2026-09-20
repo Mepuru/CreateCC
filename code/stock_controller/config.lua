@@ -41,12 +41,12 @@ config.stateFile = "/stock_controller/state.tbl"
 config.reconcilePackages = true
 
 -- 是否由程序给请求器写地址：
---   false（默认）= 不写。**推荐**——请直接在红石请求器的 GUI 里填地址。
---     原因：CC:T 把 Lua 字符串按字节传给 Java，**非 ASCII（中文）会失真**，
---     程序写 "经验" 会让请求器地址栏变乱码、包裹送不到目的地（实测踩过）。
---   true = 由程序写。此时 address 必须是**纯 ASCII**（例如 "exp"），
---     并且 frogport 的地址也要在它 GUI 里改成同一个 ASCII 串。
-config.setAddressOnOrder = false
+--   true  = 由程序写。此时 address 必须是**纯 ASCII**（例如 "EXP"），
+--           并且 frogport 的地址也要在它 GUI 里改成同一个字符串（大小写一致）。
+--   false = 不写。请直接在红石请求器的界面里填地址（界面右下有地址框）。
+-- 说明：CC:T 把 Lua 字符串按字节交给 Java，**非 ASCII（中文）会被写坏**（实测请求器地址栏变乱码），
+--       所以要么用 ASCII 地址让程序写，要么保持 false 由你手填。
+config.setAddressOnOrder = true
 
 -- 读到"整张网络一件物品都没有"时怎么处理：
 --   true（默认）= 当成"读不到"（屏幕显示 ?、不下单）——空网络通常意味着查询器没接入仓库网络，
@@ -91,9 +91,8 @@ config.rules = {
     low = 8192,                   -- 低于 8K 就补货（你习惯常备 10K 左右）
     high = 10240,                 -- 补到 10K 算够（同时是滞回上限：达到它才清空在途账本）
     batch = 1024,                 -- 每次下单 1024（= 4 槽 × 256）；请求器最多 9 槽，代码会自动分摊
-    -- 地址：字符串本身可以是中文，但 **不要让程序写**（setAddressOnOrder = false），
-    -- 请在红石请求器的 GUI 里填好目的地；这个字段现在只用于日志/兜底路径。
-    address = "经验",
+    -- 目的地地址：**纯 ASCII**（程序会写进请求器；frogport 的地址也要在它 GUI 里改成同一个）
+    address = "EXP",
     craft = false,                -- 虫蚀石头不是合成品；除非你的包里有配方
     -- batches = 1,               -- 仅 craft = true 时用
     signal = { side = "left", lowLevel = 15 },  -- 库存不足时电脑 left 面输出 15

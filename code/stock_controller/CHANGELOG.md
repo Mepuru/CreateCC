@@ -1,5 +1,23 @@
 # CHANGELOG — stock_controller
 
+## v0.7.3 (2026-09-20, 未在游戏内验证)
+
+用户仍看不到按钮 + 改用 ASCII 地址 `EXP`（方案 A）。本轮：
+
+**按钮可见性/可诊断性**
+- 按钮配色统一为"亮底黑字"（目标按钮由 `grey` 底白字 → `lightBlue` 底黑字）：
+  普通（非高级）显示器只有灰阶时旧配色几乎看不见
+- 启动时**立刻渲染一帧**，并把位置打进日志：
+  `buttons at row 6 of 12 (display 29x12, colour=true)`
+  若没画出来，日志会直接说明原因：`buttons OFF - need an ADVANCED monitor and a screen at least 5 rows tall (...)`
+- 屏幕上也会写一行 `no buttons: advanced monitor + h>=5`（当显示器不满足条件时）
+
+**地址改为 ASCII（方案 A）**
+- `config.address = "EXP"`、`config.setAddressOnOrder = true`：
+  程序可以安全写入 ASCII 地址（每次下单前写一次）
+- 记得把 **frogport 的地址也改成 `EXP`**（大小写一致），否则包裹仍无目的地
+- 地址为空时的拒绝下单保护保留（仅作用于 `setAddressOnOrder = false` 的情况）
+
 ## v0.7.2 (2026-09-20, 未在游戏内验证)
 
 用户已成功更新到 v0.7.1（日志确认），剩下的唯一阻塞是**请求器地址为空**。为此：
