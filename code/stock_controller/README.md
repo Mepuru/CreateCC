@@ -63,6 +63,9 @@ last: Infested Bricks +1024
 
 - `OK` 绿（达到 `high`）/ `..` 黄（在 low~high 之间）/ `LOW` 红（含在途仍不足）
 - `+N` = 在途数量；`inflight` = 全部规则的在途合计
+- **读不到网络数据时**：状态栏显示 `NET: <原因>`，库存列显示灰色 `?` —— `?` 是"未知"，不是 0。
+  常见原因是缺库存查询器（`NET: NO TICKER`）或它的频率与仓库不一致（`NET: NO DATA (freq?)`），
+  详细原因和解决办法会打印在**电脑终端**上。
 - 只有 monitor/term 支持颜色；`Create_DisplayLink` 会忽略颜色（纯文本），这是它的固有限制
 
 > ⚠️ **显示文本必须是 ASCII**。CC:T 只带一张位图字体（jar 内 `assets/computercraft/textures/gui/term_font.png`，

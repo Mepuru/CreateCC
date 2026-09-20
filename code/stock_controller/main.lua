@@ -150,13 +150,16 @@ local function refreshInventory()
     rebind()
   end
   if not ticker then
-    error("no stock ticker (Create_StockTicker)")
+    log("no Create_StockTicker peripheral - put it next to the computer (or on the wired network) "
+      .. "and set it to the warehouse frequency with a Frequency item")
+    error("NO TICKER")
   end
 
   -- stock(detailed?) 返回 { [1] = {name=, displayName=, count=}, ... }（1 基）
   local stock = ticker.stock()
   if type(stock) ~= "table" then
-    error("stock() returned no table (ticker offline or wrong frequency?)")
+    log("stock() returned no table - ticker not on the network, or its frequency differs from the warehouse")
+    error("NO DATA (freq?)")
   end
   local inventory = {}
   for _, entry in pairs(stock) do
@@ -342,6 +345,11 @@ local function fit(text, width)
   return text
 end
 
+-- 去掉 Lua 自动加的 "路径:行号: " 前缀，屏幕上只留可读的部分
+local function shortError(text)
+  return (tostring(text or "?"):gsub("^.-%.lua:%d+:%s*", ""))
+end
+
 local function render()
   local ok, width = pcall(display.getSize)
   if not ok or type(width) ~= "number" then
@@ -365,7 +373,7 @@ local function render()
 
   local status
   if not state.networkOk then
-    status = "NETWORK: " .. (state.lastError or "no data")
+    status = "NET: " .. shortError(state.lastError or "no data")
   elseif wide then
     status = ("upd %ds ago  inflight %d"):format(state.elapsed - state.lastPoll, inFlightTotal)
   else
@@ -380,19 +388,22 @@ local function render()
     local have = state.inventory[rule.item] or 0
     local inflight = state.ledger[rule.item] or 0
     local projected = have + inflight
-    local mark, color
-    if projected >= (rule.high or rule.low) then
-      mark, color = "OK", colors.lime
+    local mark, color, haveStr
+    if not state.networkOk then
+      -- 没读到网络数据时显示 ? —— 别把"未知"画成 0，否则看起来像库存真空了
+      mark, color, haveStr = "?", colors.grey, "?"
+    elseif projected >= (rule.high or rule.low) then
+      mark, color, haveStr = "OK", colors.lime, tostring(have)
     elseif projected >= rule.low then
-      mark, color = "..", colors.yellow
+      mark, color, haveStr = "..", colors.yellow, tostring(have)
     else
-      mark, color = "LOW", colors.red
+      mark, color, haveStr = "LOW", colors.red, tostring(have)
     end
     local text
     if wide then
-      text = ("%-18s %5d/%-5d %-3s"):format(shortLabel(rule), have, rule.low, mark)
+      text = ("%-18s %5s/%-5d %-3s"):format(shortLabel(rule), haveStr, rule.low, mark)
     else
-      text = ("%-10s %4d/%-4d %s"):format(shortLabel(rule):sub(1, 10), have, rule.low, mark)
+      text = ("%-10s %4s/%-4d %s"):format(shortLabel(rule):sub(1, 10), haveStr, rule.low, mark)
     end
     if inflight > 0 then
       text = text .. (" +%d"):format(inflight)
