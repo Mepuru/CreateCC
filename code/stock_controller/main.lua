@@ -574,13 +574,8 @@ local function render()
   local limit = math.min(width, (config.display or {}).widthLimit or width)
   local wide = limit >= 30          -- 窄屏（比如 1x1/2x2 显示器）用紧凑排版
   local canColor = (config.display or {}).color and display.setTextColour ~= nil
-  -- 按钮只在真正的 CC 显示器上画（高级显示器才会上报 monitor_touch）。
-  -- 预留行数：够高就留 2 行（提示 + 按钮），矮显示器只留 1 行给按钮。
+  -- 按钮只在真正的 CC 显示器上画（高级显示器才会上报 monitor_touch）
   local showButtons = (displayKind == "monitor") and display.setBackgroundColour ~= nil and height >= 5
-  local buttonReserve = 0
-  if showButtons then
-    buttonReserve = (height >= 8) and 2 or 1
-  end
 
   -- 注意：这里不能把局部变量起名 colors，那会遮蔽 CC:T 的全局 colors API
   local lines, lineColors = {}, {}
@@ -608,11 +603,6 @@ local function render()
   end
   lines[#lines + 1] = fit(status, limit)
   lineColors[#lineColors + 1] = colors.lightGrey
-  -- 矮显示器没有单独一行显示触摸反馈时，把它并到状态行里
-  if state.touchMsg and buttonReserve < 2 then
-    lines[#lines + 1] = fit(state.touchMsg, limit)
-    lineColors[#lineColors + 1] = colors.orange
-  end
   lines[#lines + 1] = string.rep("-", math.min(limit, 24))
   lineColors[#lineColors + 1] = colors.grey
 
@@ -662,12 +652,26 @@ local function render()
     lineColors[#lineColors + 1] = colors.cyan
   end
 
+  -- 按钮位置：**紧贴内容下方**（大屏上贴最底部会离数据太远，很难发现），放不下才贴底
+  local hintRow, buttonRow, contentLimit = nil, nil, height
+  if showButtons then
+    local contentLines = #lines
+    if contentLines + 2 <= height then
+      hintRow = contentLines + 1
+      buttonRow = contentLines + 2
+    elseif contentLines + 1 <= height then
+      buttonRow = contentLines + 1
+    else
+      contentLimit = math.max(1, height - 1)
+      buttonRow = height
+    end
+  end
+
   local okRender = pcall(function()
     display.clear()
     if canColor then
       display.setTextColour(colors.white)
     end
-    local contentLimit = showButtons and (height - buttonReserve) or height
     for y, line in ipairs(lines) do
       if y > contentLimit then
         break
@@ -679,9 +683,8 @@ local function render()
       display.write(line)
     end
 
-    if showButtons and buttonReserve >= 2 then
-      -- 倒数第二行：触摸反馈 / 操作提示（矮显示器会省掉这行）
-      display.setCursorPos(1, height - 1)
+    if hintRow then
+      display.setCursorPos(1, hintRow)
       if canColor then
         display.setTextColour(colors.lightGrey)
       end
@@ -691,9 +694,8 @@ local function render()
       end
     end
 
-    if showButtons then
-      -- 最后一行：按钮（反色绘制，触摸坐标就是这里的 x/y）
-      state.buttons = buildButtons(height, width)
+    if buttonRow then
+      state.buttons = buildButtons(buttonRow, width)
       for _, btn in ipairs(state.buttons) do
         display.setCursorPos(btn.x, btn.y)
         display.setBackgroundColour(btn.bg)
