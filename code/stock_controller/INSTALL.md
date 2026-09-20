@@ -97,9 +97,9 @@ main
 启动时会打印自检信息，用来确认装对了：
 
 ```
-[stock] 仓库控制器启动：1 条规则，轮询 2s，显示=monitor (monitor_0)
-[stock] 显示屏尺寸：29x16（宽 <30 时自动用紧凑排版）
-[stock] 库存查询器：Create_StockTicker｜红石请求器：已连接｜继电器：0 个
+[stock] stock controller up: 1 rules, poll 2s, display=monitor (monitor_0)
+[stock] display size 29x16 (compact layout when width <30)
+[stock] ticker: Create_StockTicker | requester: connected | relays: 0
 ```
 
 ## 5. 开机自启（可选）
@@ -131,4 +131,5 @@ edit /stock_controller/main.lua     :: 重新 Ctrl+V 粘贴新版
 | `下单失败 ... 没有红石请求器` | 请求器没贴着电脑/没接 modem，或频率不对 |
 | 屏幕是灰阶 | 用的是**普通显示器**，只有高级显示器才有 16 色（文字状态仍可读） |
 | `显示屏尺寸：...` 很小、行被截断 | 显示器太小；程序会自动用紧凑排版，或把 `display.widthLimit` 调小 |
-| 界面乱码/问号 | 文件名或路径写了中文；`item`/`address` 的中文是数据、没问题，路径保持 ASCII |
+| 屏幕出现方块/问号/乱码 | **CC 终端与显示器画不出汉字**（CC:T 只带位图字体，无 Unicode 字形）；显示文本一律 ASCII，中文只能当**数据**用（如 `address = "经验"`） |
+| 文件名/路径里出现中文 | 路径保持 ASCII；`item`/`address` 里的中文是数据，没问题 |

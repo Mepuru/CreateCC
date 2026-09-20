@@ -51,6 +51,22 @@
 |---|---|---|
 | `createoreexcavation:vein_finder` | Create Ore Excavation | 1.21.1-1.6.8 |
 
+### 2.4 显示能力：**只能显示 ASCII**（实测乱码，重要）
+
+CC:T 的终端/显示器只渲染它自带的那张位图字体，jar 内唯一字体资源是
+`assets/computercraft/textures/gui/term_font.png`，**没有任何 Unicode / unifont 字形提供器**
+（全 jar 里搜 `unifont|unicode|glyph` 无结果）→ **汉字画不出来，实测乱码**。
+
+因此：
+
+- 所有 `print` / `log` / 写到屏幕的文本**一律 ASCII**（英文、数字、符号）。
+- 中文只允许出现在：① 代码注释与文档 ② **数据字符串**（例如物流地址 `address = "经验"`，
+  它只参与比较、不绘制）。
+- `config.display.title`、`rule.label` 这类会显示的字段也必须 ASCII。
+
+**摆放**：用户实例的显示器在电脑**右侧**；程序用 `peripheral.find("monitor")` 按类型自动定位，
+不写死侧面。右侧被显示器占用，所以红石默认输出到空闲的 `left` 面。
+
 ## 3. 本实例**没有**装的 CC 相关 mod（别写依赖它们的代码）
 
 `CC:C Bridge`（`cccbridge`）、`CCCCC`（装置上的电脑）、`CC:LiftLink`、`cbcperipheral` / `CC:CBC`（火炮）、
@@ -74,10 +90,10 @@
 
 ```bat
 :: 1) mod 列表 + 版本（含 MC/NeoForge）
-python scripts\scan_mods.py --mods "<你的实例目录>\mods" > docs\_mods_scan.txt
+python scripts\scan_mods.py --mods "<你的实例目录>\mods" --out docs\_mods_scan.txt
 
 :: 2) 实例实际可用的外设 / ROM API / turtle 升级，并把附加 Lua API 抽出来存档
-python scripts\dump_jar_peripherals.py --mods "<你的实例目录>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
+python scripts\dump_jar_peripherals.py --mods "<你的实例目录>\mods" --extract-rom docs\rom_extras --out docs\_instance_peripherals.txt
 ```
 
 （两份生成物：`docs/_mods_scan.txt`、`docs/_instance_peripherals.txt`；升级 mod 后重跑并更新本文件。）

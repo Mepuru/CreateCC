@@ -34,12 +34,12 @@ end
 -- 配置 ---------------------------------------------------------------------
 local okConfig, config = pcall(require, "config")
 if not okConfig then
-  log("无法加载 config.lua（必须与 main.lua 同目录）：" .. tostring(config))
+  log("cannot load config.lua (must sit next to main.lua): " .. tostring(config))
   return
 end
 config.rules = config.rules or {}
 if #config.rules == 0 then
-  log("config.rules 为空，先在 config.lua 里写好要盯的物品。")
+  log("config.rules is empty - add the items to watch in config.lua")
   return
 end
 
@@ -97,7 +97,7 @@ local function loadState()
       count = count + 1
     end
     if count > 0 then
-      log(("已恢复 %d 条在途记录"):format(count))
+      log(("restored %d inflight entries"):format(count))
     end
   end
 end
@@ -129,7 +129,7 @@ local function rebind()
   local tickerName, wrappedTicker = peripheral.find("Create_StockTicker")
   ticker, state.tickerName = wrappedTicker, tickerName
   if not ticker then
-    state.lastError = "找不到 Create_StockTicker 外设"
+    state.lastError = "Create_StockTicker peripheral not found"
   end
 
   local _, wrappedRequester = peripheral.find("Create_RedstoneRequester")
@@ -150,13 +150,13 @@ local function refreshInventory()
     rebind()
   end
   if not ticker then
-    error("没有库存查询器（Create_StockTicker）")
+    error("no stock ticker (Create_StockTicker)")
   end
 
   -- stock(detailed?) 返回 { [1] = {name=, displayName=, count=}, ... }（1 基）
   local stock = ticker.stock()
   if type(stock) ~= "table" then
-    error("stock() 没有返回表（库存查询器可能没有连上网络/频率不对）")
+    error("stock() returned no table (ticker offline or wrong frequency?)")
   end
   local inventory = {}
   for _, entry in pairs(stock) do
@@ -174,7 +174,7 @@ end
 -- 下单 ---------------------------------------------------------------------
 local function orderViaRequester(rule)
   if not requester then
-    return nil, "没有红石请求器"
+    return nil, "no redstone requester"
   end
   local ok, err = pcall(function()
     if rule.address then
@@ -194,7 +194,7 @@ local function orderViaRequester(rule)
         remaining = remaining - per
       end
       if remaining > 0 then
-        log("请求器最多 9 槽：%s 还有 %d 没下单，建议调小 batch", rule.item, remaining)
+        log("requester has 9 slots max: %s still has %d unqueued, lower batch", rule.item, remaining)
       end
       requester.setRequest(table.unpack(slots))
     end
@@ -209,7 +209,7 @@ end
 
 local function orderViaTicker(rule)
   if not ticker then
-    return nil, "没有库存查询器"
+    return nil, "no stock ticker"
   end
   local filter = { name = rule.item, _requestCount = rule.batch or (rule.high - rule.low) }
   local ok, sent = pcall(ticker.requestFiltered, rule.address or "", filter)
@@ -230,7 +230,7 @@ local function placeOrder(rule)
   end
 
   if err then
-    state.lastError = ("下单失败 %s: %s"):format(rule.item, err)
+    state.lastError = ("order failed %s: %s"):format(rule.item, err)
     log(state.lastError)
     return
   end
@@ -238,7 +238,7 @@ local function placeOrder(rule)
   state.ledger[rule.item] = (state.ledger[rule.item] or 0) + (amount or 0)
   state.lastOrder[rule.item] = state.elapsed
   state.notice = ("%s +%d"):format(rule.label or rule.item, amount or 0)
-  log(("已下单 %s x%d（在途累计 %d）"):format(rule.item, amount or 0, state.ledger[rule.item]))
+  log(("ordered %s x%d (inflight total %d)"):format(rule.item, amount or 0, state.ledger[rule.item]))
   saveState()
 end
 
@@ -281,7 +281,7 @@ local function applySignals()
       if target then
         local ok, err = pcall(target.setAnalogOutput, signal.side or "left", level)
         if not ok then
-          state.lastError = ("红石输出失败 %s: %s"):format(rule.label or rule.item, tostring(err))
+          state.lastError = ("redstone output failed %s: %s"):format(rule.label or rule.item, tostring(err))
         end
       end
     end
@@ -436,25 +436,25 @@ for _ in pairs(relays) do
   relayCount = relayCount + 1
 end
 
-log("仓库控制器启动：%d 条规则，轮询 %ds，显示=%s (%s)",
+log("stock controller up: %d rules, poll %ds, display=%s (%s)",
   #config.rules, POLL, displayKind, tostring(state.displayName or "term"))
 
 local okSize, displayWidth, displayHeight = pcall(display.getSize)
 if okSize then
-  log("显示屏尺寸：%dx%d（宽 <30 时自动用紧凑排版）", displayWidth, displayHeight)
+  log("display size %dx%d (compact layout when width <30)", displayWidth, displayHeight)
 else
-  log("读取显示屏尺寸失败，将退回电脑自带屏幕")
+  log("cannot read display size, falling back to the computer screen")
 end
 
-log("库存查询器：%s｜红石请求器：%s｜继电器：%d 个",
-  tostring(state.tickerName or "无"), requester and "已连接" or "无", relayCount)
+log("ticker: %s | requester: %s | relays: %d",
+  tostring(state.tickerName or "none"), requester and "connected" or "none", relayCount)
 
 local timer = os.startTimer(POLL)
 while true do
   local event, a, b = os.pullEvent()
 
   if event == "terminate" then
-    log("收到 terminate，保存状态并退出")
+    log("terminate received; saving state and exiting")
     shutdownSignals()
     saveState()
     break
@@ -464,7 +464,7 @@ while true do
     if not ok then
       state.networkOk = false
       state.lastError = tostring(err)
-      log("读取库存失败：" .. state.lastError)
+      log("inventory read failed: " .. state.lastError)
     else
       decide()
       applySignals()
@@ -472,7 +472,7 @@ while true do
     render()
     timer = os.startTimer(POLL)
   elseif event == "peripheral" or event == "peripheral_detach" then
-    log(("外设变动（%s %s），重新绑定"):format(event, tostring(a)))
+    log(("peripheral change (%s %s), rebinding"):format(event, tostring(a)))
     rebind()
   elseif event == "package_sent" or event == "package_received" then
     -- 事件参数：外设挂载名, Package 对象（见 FrogportPeripheral / PostboxPeripheral）

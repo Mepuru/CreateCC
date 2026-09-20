@@ -7,8 +7,8 @@
 
 Agent 侧（只在换版本/换整合包后需要）：
 ```bat
-python scripts\scan_mods.py --mods "<实例>\mods" > docs\_mods_scan.txt
-python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
+python scripts\scan_mods.py --mods "<实例>\mods" --out docs\_mods_scan.txt
+python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras --out docs\_instance_peripherals.txt
 ```
 当前已知实例（`docs/ENVIRONMENT.md`）：Mechanomania 1.1.12.0 ｜ MC 1.21.1 ｜ NeoForge 21.1.248 ｜
 Create 6.0.10 ｜ CC:T 1.120.2 ｜ 未装 CC:C Bridge。

@@ -31,7 +31,7 @@
 python scripts\refresh_docs.py
 
 :: 2) 重新导出 Create 外设清单基线（与 docs/API_CREATE_NATIVE.md 比对用）
-python scripts\dump_create_peripherals.py > docs\_generated_peripherals.txt
+python scripts\dump_create_peripherals.py --out docs\_generated_peripherals.txt
 ```
 
 然后**先读 `docs/ENVIRONMENT.md` 和 `AGENTS.md`**——前者是实测环境，后者是工作规范。
@@ -41,8 +41,8 @@ python scripts\dump_create_peripherals.py > docs\_generated_peripherals.txt
 
 ```bat
 :: 0) 环境变了才需要：重扫你自己的实例（mod 列表 + 实际可用的 CC 集成面）
-python scripts\scan_mods.py --mods "<你的实例目录>\mods" > docs\_mods_scan.txt
-python scripts\dump_jar_peripherals.py --mods "<你的实例目录>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
+python scripts\scan_mods.py --mods "<你的实例目录>\mods" --out docs\_mods_scan.txt
+python scripts\dump_jar_peripherals.py --mods "<你的实例目录>\mods" --extract-rom docs\rom_extras --out docs\_instance_peripherals.txt
 
 :: 1) 可选：刷新上游资料快照（走 gh-proxy 加速）
 python scripts\refresh_docs.py

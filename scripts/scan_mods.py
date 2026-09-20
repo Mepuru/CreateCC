@@ -10,7 +10,7 @@
 用法：
     python scripts/scan_mods.py --mods "<你的实例目录>\\mods"
     python scripts/scan_mods.py --mods <mods目录> --full          # 额外列出全部 mod
-    python scripts/scan_mods.py --mods <mods目录> > docs/_mods_scan.txt
+    python scripts/scan_mods.py --mods <mods目录> --out docs/_mods_scan.txt
 
 判定「与 CC:T 有关」的依据（三条任一命中）：
     1) jar 内有包路径包含 computercraft（说明该 mod 写了 CC:T 集成代码）
@@ -46,12 +46,16 @@ RE_NEOFORGE_MAVEN = re.compile(r"net/neoforged/neoforge/([0-9][^/\s\"]*)")
 
 
 def setup_stdout() -> None:
+    """输出编码：交互式控制台沿用系统编码（GBK 控制台本来就能显示中文），
+    重定向到文件时统一 UTF-8 —— 免得中文要么在控制台乱码、要么文件编码不一致。"""
     for stream in (sys.stdout, sys.stderr):
         try:
-            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
-        except (AttributeError, ValueError):
+            if getattr(stream, "isatty", lambda: False)():
+                stream.reconfigure(errors="replace")  # type: ignore[union-attr]
+            else:
+                stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError, OSError):
             pass
-
 
 def instance_info(mods_dir: Path) -> dict:
     """从同级目录的 <实例名>.json 里读 MC / NeoForge 版本。"""
@@ -157,7 +161,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="扫描 MC 实例 mods 目录，报告 CC:T / Create 相关环境")
     parser.add_argument("--mods", required=True, help="mods 目录路径")
     parser.add_argument("--full", action="store_true", help="额外列出全部 mod（默认只列 CC/Create 相关）")
+    parser.add_argument("--out", metavar="PATH",
+                        help="把报告写到该文件（UTF-8，LF）；比用 > 重定向可靠 —— Windows PowerShell 5.1 的 > 会写成 UTF-16")
     args = parser.parse_args()
+
+    if args.out:
+        out_path = Path(args.out)
+        if str(out_path.parent) not in ("", "."):
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+        sys.stdout = out_path.open("w", encoding="utf-8", newline="\n")
+        print(f"# 报告已写入 {out_path}（UTF-8）", file=sys.stderr)
 
     mods_dir = Path(args.mods).expanduser()
     if not mods_dir.is_dir():

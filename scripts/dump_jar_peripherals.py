@@ -14,7 +14,7 @@ Create 原生的外设可在 docs/API_CREATE_NATIVE.md 查到；其它 addon 注
 用法：
     python scripts/dump_jar_peripherals.py --mods "<你的实例目录>\\mods"
     python scripts/dump_jar_peripherals.py some-mod.jar
-    python scripts/dump_jar_peripherals.py --mods <mods目录> > docs/_instance_peripherals.txt
+    python scripts/dump_jar_peripherals.py --mods <mods目录> --out docs/_instance_peripherals.txt
     python scripts/dump_jar_peripherals.py --mods <mods目录> --include-computercraft   # 连 CC:T 本体一起挖
 
 ⚠️ 外设类型名是**候选**（同一个类里可能有同名字段/配置键）。最终以游戏内为准：
@@ -50,12 +50,16 @@ RE_ROM_FILE = re.compile(r"(?:^|/)lua/rom/.+\.lua$", re.I)
 
 
 def setup_stdout() -> None:
+    """输出编码：交互式控制台沿用系统编码（GBK 控制台本来就能显示中文），
+    重定向到文件时统一 UTF-8 —— 免得中文要么在控制台乱码、要么文件编码不一致。"""
     for stream in (sys.stdout, sys.stderr):
         try:
-            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
-        except (AttributeError, ValueError):
+            if getattr(stream, "isatty", lambda: False)():
+                stream.reconfigure(errors="replace")  # type: ignore[union-attr]
+            else:
+                stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError, OSError):
             pass
-
 
 def class_pool(data: bytes) -> dict[int, str] | None:
     """解析 class 常量池，返回 {常量池下标: UTF-8 字符串}。"""
@@ -319,7 +323,16 @@ def main() -> int:
                         help="连 CC: Tweaked 本体一起挖（输出会非常吵，默认跳过）")
     parser.add_argument("--extract-rom", metavar="DIR",
                         help="把附加的 Lua ROM 文件（全局 API / 模块 / 帮助文本）抽到该目录")
+    parser.add_argument("--out", metavar="PATH",
+                        help="把报告写到该文件（UTF-8，LF）；比用 > 重定向可靠 —— Windows PowerShell 5.1 的 > 会写成 UTF-16")
     args = parser.parse_args()
+
+    if args.out:
+        out_path = Path(args.out)
+        if str(out_path.parent) not in ("", "."):
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+        sys.stdout = out_path.open("w", encoding="utf-8", newline="\n")
+        print(f"# 报告已写入 {out_path}（UTF-8）", file=sys.stderr)
 
     targets: list[Path] = [Path(p).expanduser() for p in args.jars]
     if args.mods:

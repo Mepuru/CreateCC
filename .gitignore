@@ -15,8 +15,8 @@ docs/cccbridge/
 docs/rom_extras/
 
 # ── 本机环境快照：由脚本生成，包含个人实例的 mod 清单，不进版本库 ─────────────
-# 重建：python scripts/scan_mods.py --mods "<你的实例>\mods" > docs/_mods_scan.txt
-#       python scripts/dump_jar_peripherals.py --mods "<你的实例>\mods" > docs/_instance_peripherals.txt
+# 重建：python scripts/scan_mods.py --mods "<你的实例>\mods" --out docs/_mods_scan.txt
+#       python scripts/dump_jar_peripherals.py --mods "<你的实例>\mods" --out docs/_instance_peripherals.txt
 docs/_mods_scan.txt
 docs/_instance_peripherals.txt
 

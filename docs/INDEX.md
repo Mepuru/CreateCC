@@ -117,10 +117,10 @@ docs/cccbridge/
 
 ```bat
 :: 重扫用户实例：mod 列表 + 版本
-python scripts\scan_mods.py --mods "<实例>\mods" > docs\_mods_scan.txt
+python scripts\scan_mods.py --mods "<实例>\mods" --out docs\_mods_scan.txt
 
 :: 重挖 CC 集成面（外设类型名/方法候选、ROM 附加、turtle 升级），并抽出附加 Lua API
-python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
+python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras --out docs\_instance_peripherals.txt
 ```
 
 然后把要点写进 `docs/ENVIRONMENT.md`（版本、已装/未装、外设与 ROM API 变化），并据此修订 `AGENTS.md` 第 1 节。
@@ -130,7 +130,7 @@ python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs
 ```bat
 python scripts\refresh_docs.py                              :: 全量刷新（fetch + reset，保持 sparse）
 python scripts\refresh_docs.py --proxy https://v6.gh-proxy.org/
-python scripts\dump_create_peripherals.py > docs\_generated_peripherals.txt   :: 与 API_CREATE_NATIVE.md 比对
+python scripts\dump_create_peripherals.py --out docs\_generated_peripherals.txt   :: 与 API_CREATE_NATIVE.md 比对
 ```
 
 刷新后必须：

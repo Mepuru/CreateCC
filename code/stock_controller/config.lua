@@ -48,7 +48,7 @@ config.signalOnExit = "hold"
 -- 显示屏设置
 config.display = {
   kind = "monitor",     -- CC 显示器（会用颜色）；可选 "display_link" / "term" / "auto"
-  title = "经验库存",    -- 标题（CC 显示器能显示中文）
+  title = "STOCK CONTROL",  -- 标题：必须是 ASCII（CC:T 只带位图字体，终端/显示器画不出汉字）
   color = true,         -- monitor 上用红/黄/绿标状态
   widthLimit = 40,      -- 行宽上限；实际还会按显示器真实宽度自适应（窄屏自动换紧凑排版）
 }
@@ -60,11 +60,11 @@ config.rules = {
     -- 虫蚀石砖（1.21.1 官方 id，已从客户端 jar 语言文件核对：
     --   block.minecraft.infested_stone_bricks = Infested Stone Bricks）
     item = "minecraft:infested_stone_bricks",
-    label = "Infested Bricks",   -- 想用中文就改成 "虫蚀石砖"（CC 显示器支持中文；Create 翻页屏不行）
+    label = "Infested Bricks",   -- 显示用标签：同样必须 ASCII（中文会乱码）
     low = 8192,                  -- 低于 8K 就补货（用户习惯常备 10K 左右）
     high = 10240,                -- 补到 10K 算够（同时是滞回上限：达到它才清空在途账本）
     batch = 1024,                -- 每次下单 1024（= 4 槽 × 256）；请求器最多 9 槽，代码会自动分摊
-    address = "经验",             -- frogport 的物流地址（区分大小写，必须与游戏里设置的一致）
+    address = "经验",             -- frogport 的物流地址：这是"数据"，中文没问题，只要与游戏里完全一致
     craft = false,               -- 虫蚀石砖一般不是合成品；如果你的包里有配方可选 true
     -- batches = 1,              -- 仅 craft = true 时用
     signal = { side = "left", lowLevel = 15 },  -- 库存不足时电脑 left 面输出 15；换面/换继电器改这里

@@ -60,13 +60,16 @@ REPOS = [
 
 
 def setup_stdout() -> None:
-    """Windows 控制台默认不是 UTF-8，避免中文输出报 UnicodeEncodeError。"""
+    """输出编码：交互式控制台沿用系统编码（GBK 控制台本来就能显示中文），
+    重定向到文件时统一 UTF-8 —— 免得中文要么在控制台乱码、要么文件编码不一致。"""
     for stream in (sys.stdout, sys.stderr):
         try:
-            stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
-        except (AttributeError, ValueError):
+            if getattr(stream, "isatty", lambda: False)():
+                stream.reconfigure(errors="replace")  # type: ignore[union-attr]
+            else:
+                stream.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError, OSError):
             pass
-
 
 def git(args: list[str], cwd: Path | None = None) -> str:
     """执行 git，返回 stdout（已 strip）。失败则打印输出并终止脚本。"""

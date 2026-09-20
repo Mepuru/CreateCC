@@ -23,7 +23,7 @@
 | 显示屏 | **CC 显示器**（`config.display.kind = "monitor"`，带颜色；宽 <30 自动换紧凑排版） |
 | 下单方式 | **红石请求器已装** → 走 `Create_RedstoneRequester`（`setRequest` + `request()`） |
 | 自动合成 | **关闭**（`craft = false`）：虫蚀石砖原版不是合成品；如果你的整合包用 KubeJS 加了配方，可改成 `craft = true` |
-| 红石输出 | 用**电脑自带**的红石面，默认 `left`，不足时输出 15；要换面改 `signal.side`，要多路/远距离就在规则里写 `signal.peripheral = "redstone_relay_0"` |
+| 红石输出 | 用**电脑自带**的红石面，默认 `left`（显示器在右侧，`left` 空闲），不足时输出 15；要换面改 `signal.side`，要多路/远距离就在规则里写 `signal.peripheral = "redstone_relay_0"` |
 | 阈值 | **常备 10K**：`low = 8192`（低于就补）／`high = 10240`（补到 10K 算够）／`batch = 1024`（每次 4 槽 × 256，30 秒冷却） |
 
 ## 需要的外设
@@ -55,32 +55,38 @@
 
 ```
 STOCK CONTROL
-upd 0s ago  inflight 128
+upd 0s ago  inflight 1024
 ------------------------
-Iron Ingot           512/256   OK
-Precision Mech        12/32    LOW +8
-last: Iron Ingot +128
+Infested Bricks    7600/8192  LOW +1024
+last: Infested Bricks +1024
 ```
 
 - `OK` 绿（达到 `high`）/ `..` 黄（在 low~high 之间）/ `LOW` 红（含在途仍不足）
 - `+N` = 在途数量；`inflight` = 全部规则的在途合计
 - 只有 monitor/term 支持颜色；`Create_DisplayLink` 会忽略颜色（纯文本），这是它的固有限制
 
+> ⚠️ **显示文本必须是 ASCII**。CC:T 只带一张位图字体（jar 内 `assets/computercraft/textures/gui/term_font.png`，
+> 没有任何 Unicode/字形提供器），**终端和显示器画不出汉字，实测乱码**。
+> 中文只能出现在：① 代码注释与文档 ② **数据字符串**（如物流地址 `address = "经验"`）。
+> 任何会 `print`/写到屏幕的内容都用英文。
+
 ## 游戏内验证步骤（按你的配置定制）
 
 1. **设频率**：用 Frequency 物品把 **库存查询器**和**红石请求器**都设成与仓库物流链接同一频率。
    这一步错了的表现是：屏幕一直显示 `NETWORK: ...` 或所有物品数量为 0。
-2. **摆电脑与显示器**：电脑贴着（或 modem 连到）显示器/库存查询器/红石请求器。
-   启动后看终端输出：`显示屏尺寸：WxH`、`库存查询器：xxx｜红石请求器：已连接`。
+2. **摆电脑与显示器**：显示器在电脑**右侧**（`peripheral.find("monitor")` 会自动找到，不用写侧面）；
+   库存查询器/红石请求器贴着电脑或经 modem 接入。启动后看终端输出：
+   `stock controller up: ...`、`display size WxH`、`ticker: ... | requester: connected`。
 3. **先只看不控**：把 `config.lua` 里 `low = 0`（永不触发下单）、`signal` 那行删掉或注释，
    运行 `stock_controller/main`，确认屏幕上的数量**与库存查询器 GUI 里的虫蚀石砖数量一致**。
 4. **恢复阈值并观察下单**：把 `low` 改回 **8192**（想更快看到效果就先临时设成略高于当前库存的值，比如当前 9000 就设 `low = 9000`），
    等 2 秒（一轮轮询）后应看到：
-   - 终端打印 `已下单 minecraft:infested_stone_bricks x1024（在途累计 1024）`
+   - 终端打印 `ordered minecraft:infested_stone_bricks x1024 (inflight total 1024)`
    - 显示器上该行变成 `LOW +1024`
    - 蛙港/打包机开始动，包裹发往地址 `经验`
-5. **验红石**：在电脑 `left` 面接红石灯/比较器，不足时应输出 15（灯亮），补到 `high` 后归 0。
-6. **验重启**：Ctrl+T 退出再启动，看是否打印"已恢复 N 条在途记录"、屏幕数值正常。
+5. **验红石**：在电脑 `left` 面接红石灯/比较器（右侧被显示器占用，左侧空闲），
+   不足时应输出 15（灯亮），补到 `high` 后归 0。
+6. **验重启**：Ctrl+T 退出再启动，看是否打印 `restored N inflight entries`、屏幕数值正常。
 7. **（可选）验核销**：把电脑接到发往 `经验` 的蛙港上，收到包裹时应在途数按包裹内容下降。
 
 > 阈值建议：`batch` 取 256 的整数倍最省事（单槽上限 256，程序会自动铺到最多 9 槽 = 2304）。

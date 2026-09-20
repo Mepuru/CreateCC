@@ -16,8 +16,8 @@
 已装/未装的 CC 相关 mod、实际可用的外设与 Lua API）。它变了就跑：
 
 ```bat
-python scripts\scan_mods.py --mods "<实例>\mods" > docs\_mods_scan.txt
-python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
+python scripts\scan_mods.py --mods "<实例>\mods" --out docs\_mods_scan.txt
+python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras --out docs\_instance_peripherals.txt
 ```
 
 再让用户在游戏里跑 `code/templates/probe_peripherals.lua`，把输出贴回来——
@@ -162,6 +162,10 @@ Create 6.0.10 ｜ CC:T 1.120.2 ｜ **未装 CC:C Bridge** ｜ 另有 6 个 mod �
 - 不要占用大量 CPU/内存：循环里不要做重字符串拼接，长列表用 `table.concat`，日志要限流。
 - 屏幕类程序注意 `term`/`window` 的 API 差异（CC:C Bridge 的 `create_source` 是"类 Terminal"，不支持格式化文本，
   且**同步频率 1 秒**——但那需要先装 CC:C Bridge，本实例没有）。
+- **显示文本一律 ASCII**：CC:T 只带一张位图字体（jar 内 `assets/computercraft/textures/gui/term_font.png`，
+  无 Unicode 字形提供器），**终端/显示器画不出汉字，实测乱码**。
+  中文只能出现在：① 注释与文档 ② **数据字符串**（如物流地址 `address = "经验"`，只参与比较、不绘制）。
+  `print`/`log`/屏幕绘制、`config` 里的 `title`/`label` 全部用英文。
 
 ---
 
@@ -230,6 +234,8 @@ code/
     与 `advanced_math.*`。升级 CC:T 或换包后要重跑 `dump_jar_peripherals.py --extract-rom`。
 11. **turtle 升级**是独立的集成面（本实例有 `createoreexcavation:vein_finder`）：
     程序里要用 `turtle.equipLeft/Right` 之类配合，且只有 turtle 电脑才有。
+12. **中文会乱码**：CC:T 无 CJK 字形（见 4.5），任何"给玩家看"的文本都用 ASCII；
+    写中文日志/标题 = 屏幕上一堆方块或问号（踩过一次：`display.title = "经验库存"`）。
 
 ---
 
@@ -239,12 +245,12 @@ code/
 
 1. **重扫实例**（最重要）：
    ```bat
-   python scripts\scan_mods.py --mods "<实例>\mods" > docs\_mods_scan.txt
-   python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras > docs\_instance_peripherals.txt
+   python scripts\scan_mods.py --mods "<实例>\mods" --out docs\_mods_scan.txt
+   python scripts\dump_jar_peripherals.py --mods "<实例>\mods" --extract-rom docs\rom_extras --out docs\_instance_peripherals.txt
    ```
    然后把要点写进 `docs/ENVIRONMENT.md`（版本、已装/未装、外设与 ROM API 变化）。
 2. `python scripts/refresh_docs.py` 更新上游资料快照；
-3. `python scripts/dump_create_peripherals.py > docs/_generated_peripherals.txt`，与 `docs/API_CREATE_NATIVE.md` 比对；
+3. `python scripts/dump_create_peripherals.py --out docs/_generated_peripherals.txt`，与 `docs/API_CREATE_NATIVE.md` 比对；
 4. 更新 `docs/INDEX.md` 的 branch/commit/日期；
 5. 在项目 `CHANGELOG.md` 记录"因版本升级复核了哪些 API、有无变化"。
 

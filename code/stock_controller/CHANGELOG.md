@@ -1,5 +1,22 @@
 # CHANGELOG — stock_controller
 
+## v0.4.0 (2026-09-20, 未在游戏内验证)
+
+- **修复中文乱码**：CC:T 的终端/显示器只有位图字体（jar 内 `assets/computercraft/textures/gui/term_font.png`，
+  无 Unicode 字形提供器），**画不出汉字**。程序里所有会显示出来的文本（日志、状态、错误、标题）
+  改为 ASCII 英文；中文只保留在注释、文档与**数据字符串**（`address = "经验"`）里。
+- `config.display.title`：`经验库存` → `STOCK CONTROL`（注释写明原因）；`rule.label` 注释同步纠正
+- 模板也一并处理：`code/templates/program.lua`、`code/templates/probe_peripherals.lua` 的
+  `print`/`log` 文本全部 ASCII（探测输出现在是英文，仍可直接贴回给 Agent）
+- 文档：`docs/ENVIRONMENT.md` 新增「2.4 显示能力：只能显示 ASCII（实测乱码）」，
+  `AGENTS.md` 4.5/7.12 加入硬性规范与坑位
+- 摆放信息：用户显示器在电脑**右侧**，`peripheral.find("monitor")` 自动定位；
+  红石保持输出到空闲的 `left` 面
+- 生成物的编码修复：Windows PowerShell 5.1 的 `>` 重定向会把输出写成 **UTF-16LE**
+  （仓库里旧的 `docs/_generated_peripherals.txt` 就是这样，GitHub 上显示为乱码）。
+  三个脚本新增 `--out <PATH>`（直接写 UTF-8/LF），文档里的命令全部改用它；
+  两份实例快照不再入库，`_generated_peripherals.txt` 已重新生成
+
 ## v0.3.0 (2026-09-20, 未在游戏内验证)
 
 - **阈值改为"常备 10K"**：`low = 8192` / `high = 10240` / `batch = 1024`

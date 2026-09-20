@@ -29,7 +29,7 @@ end
 local function safeCall(label, fn, ...)
   local ok, a, b, c = pcall(fn, ...)
   if not ok then
-    log("调用失败 %s: %s", label, tostring(a))
+    log("call failed %s: %s", label, tostring(a))
     return nil
   end
   return a, b, c
@@ -46,10 +46,10 @@ end
 
 --- 外设找不到时，打印现场信息，方便用户回报
 local function dumpPeripherals()
-  log("当前已连接的外设：")
+  log("connected peripherals:")
   local names = peripheral.getNames()
   if #names == 0 then
-    log("  （一个都没有：检查方块是否贴着电脑，或 modem 是否接好）")
+    log("  (none - check the block is next to the computer, or the modem is attached)")
   end
   for _, n in ipairs(names) do
     print("  ", n, peripheral.getType(n))
@@ -59,13 +59,13 @@ end
 local function main()
   local stationName, station = findAny("Create_Station")
   if not station then
-    log("找不到列车站外设（Create_Station）。请把列车站贴着电脑，或用有线/无线 modem 接入。")
+    log("Create_Station peripheral not found - put the train station next to the computer, or attach it via a modem.")
     dumpPeripherals()
     return false
   end
 
-  log("已连接外设：%s (%s)", stationName, peripheral.getType(stationName))
-  log("站名：%s", tostring(safeCall("Create_Station.getStationName", station.getStationName)))
+  log("peripheral: %s (%s)", stationName, peripheral.getType(stationName))
+  log("station: %s", tostring(safeCall("Create_Station.getStationName", station.getStationName)))
 
   -- TODO(D): 启动后的初始化（设置站名、显示初始界面等）
 
@@ -73,17 +73,17 @@ local function main()
     local event, p1, p2, p3 = os.pullEvent()
 
     if event == "terminate" then
-      log("收到 terminate，恢复现场并退出")
+      log("terminate received; restoring state and exiting")
       -- TODO(D): 这里把外设恢复到安全状态（解锁 / 关红石 / 清屏）
       break
     elseif event == "peripheral" or event == "peripheral_detach" then
-      log("外设变动：%s %s（需要时重新查找外设）", event, tostring(p1))
+      log("peripheral change: %s %s (re-find peripherals if needed)", event, tostring(p1))
     elseif event == "train_arrival" then
       -- p1 = 外设名, p2 = 站名, p3 = 列车名（见本文件头部 API 出处）
-      log("列车到站：站=%s 车=%s", tostring(p2), tostring(p3))
+      log("train arrival: station=%s train=%s", tostring(p2), tostring(p3))
       -- TODO(D): 到站逻辑
     elseif event == "train_departure" then
-      log("列车离站：站=%s 车=%s", tostring(p2), tostring(p3))
+      log("train departure: station=%s train=%s", tostring(p2), tostring(p3))
     elseif event == "timer" then
       -- TODO(D): 定时逻辑（配合 os.startTimer 使用）
     end
@@ -94,5 +94,5 @@ end
 
 local ok, err = pcall(main)
 if not ok then
-  log("程序异常退出：%s", tostring(err))
+  log("crash: %s", tostring(err))
 end

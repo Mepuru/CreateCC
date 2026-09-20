@@ -27,36 +27,36 @@ local function safe(label, fn, ...)
 end
 
 print(hr("="))
-print("== CC:T 环境探测 ==")
+print("== CC:T environment probe ==")
 print("os.version     : " .. tostring(safe(os.version)))
-print("电脑 id / label: " .. tostring(os.getComputerID()) .. " / " .. tostring(os.getComputerLabel()))
+print("computer id / label: " .. tostring(os.getComputerID()) .. " / " .. tostring(os.getComputerLabel()))
 print("free space     : " .. tostring(safe(fs.getFreeSpace, "/")))
 
 -- CC: Sable 注入的 ROM 附加（没装则为 nil / require 失败，属正常）
 print(hr("-"))
-print("== ROM 附加（CC: Sable 等） ==")
+print("== ROM extras (CC: Sable etc.) ==")
 for _, name in ipairs({ "aero", "matrix", "quaternion", "sublevel" }) do
   local value = _G[name]
-  print(("  %-11s : %s"):format(name, value ~= nil and type(value) or "不存在"))
+  print(("  %-11s : %s"):format(name, value ~= nil and type(value) or "missing"))
 end
 for _, mod in ipairs({ "advanced_math.mmath", "advanced_math.pid", "advanced_math.stats" }) do
   local ok, res = pcall(require, mod)
-  print(("  require %-22s : %s"):format(mod, ok and "OK" or ("失败 - " .. tostring(res))))
+  print(("  require %-22s : %s"):format(mod, ok and "OK" or ("failed - " .. tostring(res))))
 end
 
 -- 已连接外设
 print(hr("-"))
 local names = peripheral.getNames()
-print(("== 已连接外设（%d 个） =="):format(#names))
+print(("== connected peripherals (%d) =="):format(#names))
 if #names == 0 then
-  print("  （一个都没有：检查方块是否贴着电脑，或 modem 是否接好）")
+  print("  (none - check the block is next to the computer, or the modem is attached)")
 end
 
 for _, name in ipairs(names) do
   local ptype = safe(peripheral.getType, name)
   print(hr("-"))
-  print(("挂载名: %s"):format(name))
-  print(("类型名: %s"):format(tostring(ptype)))
+  print(("name: %s"):format(name))
+  print(("type: %s"):format(tostring(ptype)))
 
   local methods = {}
   local p = peripheral.wrap(name)
@@ -69,11 +69,11 @@ for _, name in ipairs(names) do
   end
   table.sort(methods)
   if #methods > 0 then
-    print("方法  : " .. table.concat(methods, ", "))
+    print("methods: " .. table.concat(methods, ", "))
   else
-    print("方法  : （无法用 pairs 枚举，可能是 native 外设；请查该 mod 的文档）")
+    print("methods: (cannot enumerate via pairs; native peripheral - see the mod docs)")
   end
 end
 
 print(hr("="))
-print("探测完成，请把以上完整输出复制给 Agent。")
+print("probe done - copy this whole output back to the agent.")
