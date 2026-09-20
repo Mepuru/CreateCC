@@ -741,12 +741,15 @@ local function checkAddresses()
   for _, rule in ipairs(config.rules) do
     local want = rule.address
     if want then
-      if want:find("[\128-\255]") and config.setAddressOnOrder ~= false then
-        log("WARNING: address %q contains non-ASCII characters. CC:T passes Lua strings to Java as bytes, "
-          .. "so it WILL arrive mangled (seen in practice: the requester's address field turns into garbage). "
-          .. "Use an ASCII address, or keep setAddressOnOrder=false and set it in the requester GUI.", want)
-      end
-      if config.setAddressOnOrder == false and current ~= want then
+      local wantIsAscii = not want:find("[\128-\255]")
+      if wantIsAscii and config.setAddressOnOrder ~= false then
+        -- ASCII 地址由程序写入，没问题
+      elseif not wantIsAscii then
+        -- 非 ASCII：程序不会写它（会乱码），所以地址由你在请求器 GUI 里设置；
+        -- 这里**不做相等比较**——Java→Lua 的编码转换可能让 6 字节的 UTF-8 与 GUI 里的值比较不相等，比较会误报。
+        log("note: config address is non-ASCII, so the program will not write it. "
+          .. "Make sure the requester GUI holds the right address (see the address box in its screen).")
+      elseif config.setAddressOnOrder == false and current ~= want then
         log("note: requester address is currently %q but config says %q. With setAddressOnOrder=false "
           .. "the program will NOT overwrite it - make sure the requester GUI holds the right address.",
           current, want)
