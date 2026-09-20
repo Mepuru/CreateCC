@@ -1,5 +1,24 @@
 # CHANGELOG — stock_controller
 
+## v0.6.0 (2026-09-20, 未在游戏内验证)
+
+用户实测反馈两件事：
+
+1. **物品写错了**：实际要盯的是**虫蚀石头** `minecraft:infested_stone`，
+   不是虫蚀石砖 `minecraft:infested_stone_bricks` → 配置已改（两个 id 都从客户端 jar 语言文件核对过）。
+   这也是"网络里读到 0"的原因。
+2. **请求器地址变成乱码**：程序执行 `setAddress("经验")` 后，请求器地址栏显示乱码、包裹送不到。
+   → 确认 **CC:T 把 Lua 字符串按字节传给 Java，非 ASCII 会失真**（此前只是猜测，现在有实测证据）。
+
+对策（v0.6.0）：
+
+- `config.setAddressOnOrder`（默认 **false**）：程序**不再**写地址，请在红石请求器 GUI 里填目的地；
+  想用 ASCII 地址（推荐，例如 `exp`）就设为 `true` 并同步改 frogport 地址
+- 启动自检 `checkAddresses()`：
+  · `address` 含非 ASCII 且会由程序写入时，打印 WARNING（告知必然乱码）
+  · `setAddressOnOrder = false` 时打印"请求器当前地址 vs 配置期望地址"，不一致就提醒
+- README 把"中文地址自测"一节改成「地址为什么不能是中文」（实测结论 + 三种处理方案 + 排查命令）
+
 ## v0.5.0 (2026-09-20, 未在游戏内验证) — **修掉"读不到查询器"的真正原因**
 
 用户反馈"查询器就贴在电脑上、也做了绑定，程序还是说读不到"，并质疑思路。

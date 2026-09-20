@@ -18,11 +18,11 @@
 
 | 项 | 值 |
 |---|---|
-| 监控物品 | **虫蚀石砖** = `minecraft:infested_stone_bricks`（已从你本地 `client-1.21.1-...-extra.jar` 的 `en_us.json` 核对：`block.minecraft.infested_stone_bricks`） |
-| 目标地址 | **`经验`**（frogport 的物流地址；必须与游戏里完全一致，含中文） |
+| 监控物品 | **虫蚀石头**（Infested Stone）= `minecraft:infested_stone`。<br>⚠️ 别和**虫蚀石砖**（`minecraft:infested_stone_bricks`）搞混——两个 id 都已从你本地 `client-1.21.1-...-extra.jar` 的 `en_us.json` 核对 |
+| 目标地址 | 字符串是 **`经验`**，但**程序不写它**（`config.setAddressOnOrder = false`）——请在**红石请求器的 GUI** 里填目的地。原因见下面「地址为什么不能是中文」 |
 | 显示屏 | **CC 显示器**（`config.display.kind = "monitor"`，带颜色；宽 <30 自动换紧凑排版） |
 | 下单方式 | **红石请求器已装** → 走 `Create_RedstoneRequester`（`setRequest` + `request()`） |
-| 自动合成 | **关闭**（`craft = false`）：虫蚀石砖原版不是合成品；如果你的整合包用 KubeJS 加了配方，可改成 `craft = true` |
+| 自动合成 | **关闭**（`craft = false`）：虫蚀石头原版不是合成品；如果你的整合包用 KubeJS 加了配方，可改成 `craft = true` |
 | 红石输出 | 用**电脑自带**的红石面，默认 `left`（显示器在右侧，`left` 空闲），不足时输出 15；要换面改 `signal.side`，要多路/远距离就在规则里写 `signal.peripheral = "redstone_relay_0"` |
 | 阈值 | **常备 10K**：`low = 8192`（低于就补）／`high = 10240`（补到 10K 算够）／`batch = 1024`（每次 4 槽 × 256，30 秒冷却） |
 
@@ -31,7 +31,7 @@
 | 用途 | 状态 | 类型名 | 说明 |
 |---|---|---|---|
 | 读仓库库存 | **必需** | `Create_StockTicker` | 必须**加入仓库的物流网络**：用**打包机链接（Stock Link）物品**右键仓库的 Stock Link 调谐，再右键查询器（或用调谐好的物品放置查询器）。**不是**用"频率"物品——那是红石链接系统的 |
-| 下单 | **已确认有** | `Create_RedstoneRequester` | 同样要在这条物流网络上（它的物品就是可调谐物品）；地址由程序用 `setAddress("经验")` 写入 |
+| 下单 | **已确认有** | `Create_RedstoneRequester` | 同样要在这条物流网络上（它的物品就是可调谐物品）；**目的地地址请在它的 GUI 里填**，不要让程序写（见下） |
 | 显示屏 | **已确认有** | `monitor`（CC 显示器） | 程序会打印实际尺寸；`Create_DisplayLink`、电脑屏幕作为回退 |
 | 附加红石 | 可选 | `redstone_relay` | 现在没用；将来多路输出时规则里写 `signal.peripheral`（挂载名） |
 | 在途核销 | 可选 | `Create_Frogport` / `Create_Postbox` | 电脑接在蛙港/邮筒上时按包裹内容核销在途；不接则只在达到 `high` 时清零 |
@@ -104,22 +104,30 @@ last: Infested Bricks +1024
 
 ❌ **本机没有 Minecraft，程序未在游戏内运行验证**——请按上面 7 步实测，有问题把**报错全文 + 屏幕内容**发我。
 
-## 中文地址自测（`address = "经验"` 到底能不能用）
+## 地址为什么不能是中文（已实测确认，别再猜了）
 
-CC:T 的 Lua 字符串是字节串，传给 Create 时要转成 Java 字符串；**这个转换是否按 UTF-8 解释，
-我无法在离线环境里证实**（Cobalt 运行时是 JarJar 嵌套 jar，编码路径不在证据链上）。
-花 10 秒在游戏里验一下，**用字节比较而不是看屏幕**（屏幕画不出汉字）：
+**结论：CC:T 把 Lua 字符串按字节交给 Java，非 ASCII 会失真。**
+用户实测：程序执行 `setAddress("经验")` 后，**请求器的地址栏变成乱码**，包裹送不到目的地。
+（所以之前"中文能不能当数据"的疑问到此有答案：**不能**，至少不能靠程序写进去。）
 
-```lua
-local r = peripheral.find("Create_RedstoneRequester")
-r.setAddress("经验")
-local back = r.getAddress()
-print(#back, back == "经验")   -- 期望输出：6   true
-```
+三种处理方式，**任选一种**：
 
-- 输出 `6   true` → 往返无损，`config.lua` 保持 `address = "经验"`。
-- 输出不是 `6   true`（例如 `6   false`，或字节数不是 6）→ 说明转换有损：
-  把 **frogport 的地址**和 **`config.lua` 的 `address`** 一起改成 ASCII（例如 `xp`），其余不用动。
+| 方案 | 做法 | 评价 |
+|---|---|---|
+| **A（推荐）** | 把 **frogport 的地址改成 ASCII**（例如 `exp`），`config.lua` 里也写 `address = "exp"`，并设 `setAddressOnOrder = true` | 程序可以自由写地址，最省心 |
+| **B（保持中文地址）** | 在**红石请求器的 GUI** 里把目的地填成 `经验`；`config.setAddressOnOrder` 保持 `false`（默认），程序**不覆盖**它 | 不动现有命名；缺点是地址只能手填 |
+| C | 用 `Create_StockTicker.requestFiltered(address, ...)` 直连下单 | 同样传字符串，**中文一样会坏**，所以也需要 ASCII 地址 |
+
+程序内置两道防护：
+
+- 启动时若 `address` 含非 ASCII 且 `setAddressOnOrder` 没关 → 终端打印 WARNING（告诉你会乱码）；
+- `setAddressOnOrder = false` 时会打印"请求器当前地址 / 配置里期望的地址"，不一致就提醒你去 GUI 里改。
+
+> 检查请求器现在到底存了什么（乱码会以 Latin-1 字符显示出来，屏幕能画）：
+> ```lua
+> local r = peripheral.find("Create_RedstoneRequester")
+> print("address = " .. tostring(r.getAddress()))
+> ```
 
 ## 已知限制（替换仪表时要注意）
 

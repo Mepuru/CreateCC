@@ -208,7 +208,11 @@ local function orderViaRequester(rule)
     return nil, "no redstone requester"
   end
   local ok, err = pcall(function()
-    if rule.address then
+    -- ⚠️ 地址只能用 ASCII：CC:T 把 Lua 字符串按字节交给 Java，
+    --    中文字符串会失真（实测：请求器的地址栏变成乱码，包裹就送不到目的地）。
+    --    所以默认不写地址（setAddressOnOrder = false），请在请求器 GUI 里直接填地址；
+    --    想用程序写地址，就把 frogport 地址改成 ASCII（例如 exp）并设 setAddressOnOrder = true。
+    if config.setAddressOnOrder ~= false and rule.address then
       requester.setAddress(rule.address)
     end
     requester.setConfiguration(rule.configuration or "allow_partial")
@@ -496,6 +500,33 @@ local function render()
   end
 end
 
+-- 启动自检：地址（非 ASCII 会被 CC:T 传坏；请求器现有地址与配置是否一致）
+local function checkAddresses()
+  if not requester then
+    return
+  end
+  local okAddr, current = pcall(requester.getAddress)
+  if not okAddr then
+    return
+  end
+  current = tostring(current or "")
+  for _, rule in ipairs(config.rules) do
+    local want = rule.address
+    if want then
+      if want:find("[\128-\255]") and config.setAddressOnOrder ~= false then
+        log("WARNING: address %q contains non-ASCII characters. CC:T passes Lua strings to Java as bytes, "
+          .. "so it WILL arrive mangled (seen in practice: the requester's address field turns into garbage). "
+          .. "Use an ASCII address, or keep setAddressOnOrder=false and set it in the requester GUI.", want)
+      end
+      if config.setAddressOnOrder == false and current ~= want then
+        log("note: requester address is currently %q but config says %q. With setAddressOnOrder=false "
+          .. "the program will NOT overwrite it - make sure the requester GUI holds the right address.",
+          current, want)
+      end
+    end
+  end
+end
+
 -- 主循环 -------------------------------------------------------------------
 loadState()
 rebind()
@@ -517,6 +548,8 @@ end
 
 log("ticker: %s | requester: %s | relays: %d",
   tostring(state.tickerName or "none"), requester and "connected" or "none", relayCount)
+
+checkAddresses()
 
 local timer = os.startTimer(POLL)
 while true do

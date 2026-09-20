@@ -40,6 +40,14 @@ config.stateFile = "/stock_controller/state.tbl"
 -- 是否用蛙港/邮筒的 package_sent / package_received 事件核销在途
 config.reconcilePackages = true
 
+-- 是否由程序给请求器写地址：
+--   false（默认）= 不写。**推荐**——请直接在红石请求器的 GUI 里填地址。
+--     原因：CC:T 把 Lua 字符串按字节传给 Java，**非 ASCII（中文）会失真**，
+--     程序写 "经验" 会让请求器地址栏变乱码、包裹送不到目的地（实测踩过）。
+--   true = 由程序写。此时 address 必须是**纯 ASCII**（例如 "exp"），
+--     并且 frogport 的地址也要在它 GUI 里改成同一个 ASCII 串。
+config.setAddressOnOrder = false
+
 -- 读到"整张网络一件物品都没有"时怎么处理：
 --   true（默认）= 当成"读不到"（屏幕显示 ?、不下单）——空网络通常意味着查询器没接入仓库网络，
 --                 或仓库区块没加载；当成 0 会导致每 30 秒重复下单
@@ -67,22 +75,26 @@ config.display = {
 
 config.rules = {
   {
-    -- 虫蚀石砖（1.21.1 官方 id，已从客户端 jar 语言文件核对：
-    --   block.minecraft.infested_stone_bricks = Infested Stone Bricks）
-    item = "minecraft:infested_stone_bricks",
-    label = "Infested Bricks",   -- 显示用标签：同样必须 ASCII（中文会乱码）
-    low = 8192,                  -- 低于 8K 就补货（用户习惯常备 10K 左右）
-    high = 10240,                -- 补到 10K 算够（同时是滞回上限：达到它才清空在途账本）
-    batch = 1024,                -- 每次下单 1024（= 4 槽 × 256）；请求器最多 9 槽，代码会自动分摊
-    address = "经验",             -- frogport 的物流地址：这是"数据"，中文没问题，只要与游戏里完全一致
-    craft = false,               -- 虫蚀石砖一般不是合成品；如果你的包里有配方可选 true
-    -- batches = 1,              -- 仅 craft = true 时用
-    signal = { side = "left", lowLevel = 15 },  -- 库存不足时电脑 left 面输出 15；换面/换继电器改这里
+    -- 虫蚀石头（Infested Stone）——注意**不是**虫蚀石砖！
+    --   minecraft:infested_stone         = 虫蚀石头  ← 就是这个
+    --   minecraft:infested_stone_bricks  = 虫蚀石砖
+    -- （两个 id 都已从客户端 jar 的 en_us.json 核对）
+    item = "minecraft:infested_stone",
+    label = "Infested Stone",     -- 显示用标签：必须 ASCII（中文画不出来）
+    low = 8192,                   -- 低于 8K 就补货（你习惯常备 10K 左右）
+    high = 10240,                 -- 补到 10K 算够（同时是滞回上限：达到它才清空在途账本）
+    batch = 1024,                 -- 每次下单 1024（= 4 槽 × 256）；请求器最多 9 槽，代码会自动分摊
+    -- 地址：字符串本身可以是中文，但 **不要让程序写**（setAddressOnOrder = false），
+    -- 请在红石请求器的 GUI 里填好目的地；这个字段现在只用于日志/兜底路径。
+    address = "经验",
+    craft = false,                -- 虫蚀石头不是合成品；除非你的包里有配方
+    -- batches = 1,               -- 仅 craft = true 时用
+    signal = { side = "left", lowLevel = 15 },  -- 库存不足时电脑 left 面输出 15
   },
   --[[ 加更多物品就照上面复制一条
   {
     item = "minecraft:iron_ingot", label = "Iron Ingot",
-    low = 256, high = 768, batch = 256, address = "经验",
+    low = 256, high = 768, batch = 256, address = "exp",
     craft = false, signal = { side = "right", lowLevel = 15 },
   },
   ]]
