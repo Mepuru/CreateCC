@@ -162,12 +162,23 @@ local function refreshInventory()
     error("NO DATA (freq?)")
   end
   local inventory = {}
+  local entries = 0
   for _, entry in pairs(stock) do
+    entries = entries + 1
     local itemName = entry.name
     if type(itemName) == "string" then
       inventory[itemName] = (inventory[itemName] or 0) + (tonumber(entry.count) or 0)
     end
   end
+
+  -- 空网络 ≠ 库存为 0：多半是频率不对/仓库区块没加载。
+  -- 这时绝对不能当成"库存 0"去下单（会每 30 秒刷一次单），所以按"读不到"处理。
+  if entries == 0 and (config.emptyMeansUnknown ~= false) then
+    log("stock() returned an EMPTY network - check: (1) the ticker's frequency was copied from the "
+      .. "warehouse Stock Link with a Frequency item, (2) the warehouse chunks are loaded")
+    error("EMPTY NETWORK (freq?)")
+  end
+
   state.inventory = inventory
   state.lastPoll = state.elapsed
   state.networkOk = true

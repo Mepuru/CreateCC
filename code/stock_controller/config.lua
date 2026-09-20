@@ -40,6 +40,12 @@ config.stateFile = "/stock_controller/state.tbl"
 -- 是否用蛙港/邮筒的 package_sent / package_received 事件核销在途
 config.reconcilePackages = true
 
+-- 读到"整张网络一件物品都没有"时怎么处理：
+--   true（默认）= 当成"读不到"（屏幕显示 ?、不下单）——空网络通常意味着频率不对或仓库区块没加载，
+--                 当成 0 会导致每 30 秒重复下单
+--   false       = 当真（确实存在"空仓库"场景时才关掉）
+config.emptyMeansUnknown = true
+
 -- 程序退出（Ctrl+T）时怎么处理红石输出：
 --   "hold"  = 保持现状（推荐：红石是"库存不足"的告警，不希望在停机时被清掉）
 --   "clear" = 全部归零
