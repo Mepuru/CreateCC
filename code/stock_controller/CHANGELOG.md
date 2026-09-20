@@ -1,5 +1,17 @@
 # CHANGELOG — stock_controller
 
+## v0.4.3 (2026-09-20, 未在游戏内验证)
+
+**文档更正**：物流网络**不是**用「频率（Frequency）」物品绑的（我前几版写错了）。
+
+- 依据：你 jar 内 `assets/create/lang/*.json` 的教程文本 "Right-click a Stock link before placement
+  to connect to its network"；源码 `LogisticallyLinkedBlockItem.useOn()`（未调谐物品右键带网络的方块 →
+  把该方块的网络 UUID 复制进物品）与 `StockTickerBlock.useItemOn()`（手持此类物品时把右键透传给物品处理）
+- 正确做法（写入 INSTALL §3.6）：拿**打包机链接 Stock Link 物品**右键仓库的 Stock Link 调谐，
+  再右键库存查询器；或直接用调谐好的物品放置查询器
+- 「频率」物品属于**红石链接**系统，与物流网络无关
+- 同步修正 README / config / main.lua 里的相关表述与提示文案
+
 ## v0.4.2 (2026-09-20, 未在游戏内验证)
 
 安全护栏：**空网络不再当成"库存 0"**。

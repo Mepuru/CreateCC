@@ -6,7 +6,9 @@
 
 依赖（全部 Create 原生 / CC:T 自带，**不需要额外 mod**）：
   - Minecraft 1.21.1 / NeoForge / Create 6.0.10 / CC: Tweaked 1.120.2（本实例实测版本）
-  - 必须：Create 库存查询器（Create_StockTicker），且用 Frequency 物品设成与仓库同一频率
+  - 必须：Create 库存查询器（Create_StockTicker），并且要"加入仓库的物流网络"：
+    用打包机链接（Stock Link）物品右键仓库的 Stock Link 调谐，再右键查询器（或用调谐好的物品放置）。
+    注意：不是用「频率（Frequency）」物品，那是红石链接系统的
   - 可选：Create 红石请求器（Create_RedstoneRequester）→ 支持 setCraftingRequest 自动合成
   - 可选：显示屏 —— Create 显示链接（Create_DisplayLink）或 CC:T 显示器（monitor）；都没有就用电脑自身屏幕
   - 可选：redstone_relay（CC:T 自带）→ 需要多路/远距离红石；否则用电脑自带 redstone API
@@ -150,8 +152,7 @@ local function refreshInventory()
     rebind()
   end
   if not ticker then
-    log("no Create_StockTicker peripheral - put it next to the computer (or on the wired network) "
-      .. "and set it to the warehouse frequency with a Frequency item")
+    log("no Create_StockTicker peripheral - put it next to the computer (or on the wired network)")
     error("NO TICKER")
   end
 
@@ -171,11 +172,12 @@ local function refreshInventory()
     end
   end
 
-  -- 空网络 ≠ 库存为 0：多半是频率不对/仓库区块没加载。
+  -- 空网络 ≠ 库存为 0：多半是查询器没接入仓库网络，或仓库区块没加载。
   -- 这时绝对不能当成"库存 0"去下单（会每 30 秒刷一次单），所以按"读不到"处理。
   if entries == 0 and (config.emptyMeansUnknown ~= false) then
-    log("stock() returned an EMPTY network - check: (1) the ticker's frequency was copied from the "
-      .. "warehouse Stock Link with a Frequency item, (2) the warehouse chunks are loaded")
+    log("stock() returned an EMPTY network - the ticker is not on the warehouse network "
+      .. "(tune a Stock Link item on the warehouse Stock Link, then right-click the ticker), "
+      .. "or the warehouse chunks are not loaded")
     error("EMPTY NETWORK (freq?)")
   end
 

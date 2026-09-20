@@ -30,8 +30,8 @@
 
 | 用途 | 状态 | 类型名 | 说明 |
 |---|---|---|---|
-| 读仓库库存 | **必需** | `Create_StockTicker` | 必须用 **Frequency 物品**设成与仓库物流链接同一频率，否则 `stock()` 返回空表 |
-| 下单 | **已确认有** | `Create_RedstoneRequester` | 同样要设成仓库频率；地址由程序用 `setAddress("经验")` 写入 |
+| 读仓库库存 | **必需** | `Create_StockTicker` | 必须**加入仓库的物流网络**：用**打包机链接（Stock Link）物品**右键仓库的 Stock Link 调谐，再右键查询器（或用调谐好的物品放置查询器）。**不是**用"频率"物品——那是红石链接系统的 |
+| 下单 | **已确认有** | `Create_RedstoneRequester` | 同样要在这条物流网络上（它的物品就是可调谐物品）；地址由程序用 `setAddress("经验")` 写入 |
 | 显示屏 | **已确认有** | `monitor`（CC 显示器） | 程序会打印实际尺寸；`Create_DisplayLink`、电脑屏幕作为回退 |
 | 附加红石 | 可选 | `redstone_relay` | 现在没用；将来多路输出时规则里写 `signal.peripheral`（挂载名） |
 | 在途核销 | 可选 | `Create_Frogport` / `Create_Postbox` | 电脑接在蛙港/邮筒上时按包裹内容核销在途；不接则只在达到 `high` 时清零 |
@@ -64,7 +64,7 @@ last: Infested Bricks +1024
 - `OK` 绿（达到 `high`）/ `..` 黄（在 low~high 之间）/ `LOW` 红（含在途仍不足）
 - `+N` = 在途数量；`inflight` = 全部规则的在途合计
 - **读不到网络数据时**：状态栏显示 `NET: <原因>`，库存列显示灰色 `?` —— `?` 是"未知"，不是 0。
-  常见原因是缺库存查询器（`NET: NO TICKER`）或它的频率与仓库不一致（`NET: NO DATA (freq?)`），
+  常见原因是缺库存查询器（`NET: NO TICKER`）或它没接进仓库的物流网络（`NET: EMPTY NETWORK (freq?)`），
   详细原因和解决办法会打印在**电脑终端**上。
 - 只有 monitor/term 支持颜色；`Create_DisplayLink` 会忽略颜色（纯文本），这是它的固有限制
 
@@ -75,7 +75,8 @@ last: Infested Bricks +1024
 
 ## 游戏内验证步骤（按你的配置定制）
 
-1. **设频率**：用 Frequency 物品把 **库存查询器**和**红石请求器**都设成与仓库物流链接同一频率。
+1. **接进物流网络**：拿**打包机链接（Stock Link）物品**右键仓库里正在工作的 Stock Link（物品变成金色"已连接"），
+   再拿它右键**库存查询器**（详见 `INSTALL.md` §3.6）。**不要**用「频率」物品——那是红石链接系统。
    这一步错了的表现是：屏幕一直显示 `NETWORK: ...` 或所有物品数量为 0。
 2. **摆电脑与显示器**：显示器在电脑**右侧**（`peripheral.find("monitor")` 会自动找到，不用写侧面）；
    库存查询器/红石请求器贴着电脑或经 modem 接入。启动后看终端输出：
