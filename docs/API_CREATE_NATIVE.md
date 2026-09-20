@@ -9,9 +9,10 @@
 - ⚠️ 类型名字符串**区分大小写**，`Create_` 前缀是必须的。
 
 ```lua
-local name, station = peripheral.find("Create_Station")
+-- peripheral.find(type) 返回"已包装外设表"（没有则 nil），**不含 name**；名字用 getName
+local station = peripheral.find("Create_Station")
 if not station then error("没有找到 Create_Station 外设，检查电脑是否贴着列车站") end
-print(name, station.getStationName())
+print(peripheral.getName(station), station.getStationName())
 ```
 
 ## 外设一览

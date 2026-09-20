@@ -24,9 +24,9 @@
 用法与 Create 原生一致（类型名区分大小写）：
 
 ```lua
-local name, editor = peripheral.find("CreateAdditionalLogistics_PackageEditor")
+local editor = peripheral.find("CreateAdditionalLogistics_PackageEditor")
 if not editor then error("没找到 PackageEditor，检查方块是否贴着电脑或接入 modem") end
-print(name, textutils.serialize(editor.listRules()))
+print(peripheral.getName(editor), textutils.serialize(editor.listRules()))
 ```
 
 > `NetworkMonitorPeripheral` 的类型名没被脚本抓到（它可能继承/拼接了类型名）。用 probe 脚本看它实际报什么。

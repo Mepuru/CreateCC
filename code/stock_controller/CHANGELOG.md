@@ -1,5 +1,35 @@
 # CHANGELOG — stock_controller
 
+## v0.5.0 (2026-09-20, 未在游戏内验证) — **修掉"读不到查询器"的真正原因**
+
+用户反馈"查询器就贴在电脑上、也做了绑定，程序还是说读不到"，并质疑思路。
+复查 CC:T 1.120.2 的 **ROM 源码** `rom/apis/peripheral.lua`（第 332–345 行）：
+
+```lua
+function find(ty, filter)
+    local results = {}
+    for _, name in ipairs(peripheral.getNames()) do
+        if peripheral.hasType(name, ty) then
+            local wrapped = peripheral.wrap(name)
+            if filter == nil or filter(name, wrapped) then
+                table.insert(results, wrapped)   -- 只装 wrapped
+```
+
+→ **`peripheral.find` 返回 0 个或多个"已包装外设表"，不返回 name**（老 CC1 的 `(name, wrapped)` 是过时语义）。
+
+我的代码写的是 `local tickerName, wrappedTicker = peripheral.find("Create_StockTicker")`，
+只有一个查询器时 `wrappedTicker` = **nil** → 程序判定"没有查询器"（`NET: NO TICKER`）。
+**外设一直是好的，是程序自己在骗自己。**
+
+修复：
+
+- `rebind()`：`ticker = peripheral.find("Create_StockTicker")`；名字改用 `peripheral.getName()`（新增 `nameOf()` 帮助函数）
+- `findDisplay()`：同样修掉——之前 `monitor` 那一支实际永远拿不到显示器，会静默退回电脑自带屏幕
+- `requester` 同理修正
+- `code/templates/program.lua` 的 `findAny()` 同步修正
+- `AGENTS.md` §4.1 更正规范（附 ROM 出处），§7.7 换成这条最大的坑；§7.2 补"无线 modem 不能访问外设"
+- `docs/API_CREATE_NATIVE.md` / `docs/API_INSTANCE_ADDONS.md` 里的示例代码同步修正
+
 ## v0.4.3 (2026-09-20, 未在游戏内验证)
 
 **文档更正**：物流网络**不是**用「频率（Frequency）」物品绑的（我前几版写错了）。

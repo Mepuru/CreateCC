@@ -38,8 +38,13 @@ end
 --- 依次尝试若干外设类型名，返回 name, wrapped, type
 local function findAny(...)
   for _, t in ipairs({ ... }) do
-    local name, p = peripheral.find(t) -- 注意：find 返回 (name, wrapped)
-    if p then return name, p, t end
+    -- ⚠️ peripheral.find(type) 只返回"已包装外设表"（0 个或多个），**不返回 name**
+    --    （出处：CC:T ROM rom/apis/peripheral.lua 的 find()）。名字要用 peripheral.getName。
+    local wrapped = peripheral.find(t)
+    if wrapped then
+      local ok, name = pcall(peripheral.getName, wrapped)
+      return (ok and name) or t, wrapped, t
+    end
   end
   return nil
 end

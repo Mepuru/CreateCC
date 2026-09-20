@@ -105,21 +105,36 @@ local function loadState()
 end
 
 -- 外设绑定 -----------------------------------------------------------------
+-- ⚠️ peripheral.find(type) 返回的是**已包装外设表**（0 个或多个），**不返回 name**！
+--    出处：CC:T ROM 的 rom/apis/peripheral.lua `find()` —— 只 `table.insert(results, wrapped)`。
+--    （老 CC1 文档里的 "(name, wrapped)" 是过时语义，照抄会拿到 nil。）
+--    需要名字时用 peripheral.getName(wrapped)。
+local function nameOf(wrapped)
+  if not wrapped then
+    return "none"
+  end
+  local ok, name = pcall(peripheral.getName, wrapped)
+  if ok and type(name) == "string" then
+    return name
+  end
+  return "?"
+end
+
 local function findDisplay()
   local wanted = (config.display or {}).kind or "auto"
   if wanted == "auto" or wanted == "display_link" then
-    local name, wrapped = peripheral.find("Create_DisplayLink")
+    local wrapped = peripheral.find("Create_DisplayLink")
     if wrapped then
-      return wrapped, "display_link", name
+      return wrapped, "display_link", nameOf(wrapped)
     end
     if wanted == "display_link" then
       return term, "term", "term"
     end
   end
   if wanted == "auto" or wanted == "monitor" then
-    local name, wrapped = peripheral.find("monitor")
+    local wrapped = peripheral.find("monitor")
     if wrapped then
-      return wrapped, "monitor", name
+      return wrapped, "monitor", nameOf(wrapped)
     end
   end
   return term, "term", "term"
@@ -128,14 +143,13 @@ end
 local function rebind()
   display, displayKind, state.displayName = findDisplay()
 
-  local tickerName, wrappedTicker = peripheral.find("Create_StockTicker")
-  ticker, state.tickerName = wrappedTicker, tickerName
+  ticker = peripheral.find("Create_StockTicker")
+  state.tickerName = nameOf(ticker)
   if not ticker then
     state.lastError = "Create_StockTicker peripheral not found"
   end
 
-  local _, wrappedRequester = peripheral.find("Create_RedstoneRequester")
-  requester = wrappedRequester
+  requester = peripheral.find("Create_RedstoneRequester")
 
   relays = {}
   for _, name in ipairs(peripheral.getNames()) do

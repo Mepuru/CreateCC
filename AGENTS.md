@@ -124,9 +124,14 @@ Create 6.0.10 ｜ CC:T 1.120.2 ｜ **未装 CC:C Bridge** ｜ 另有 6 个 mod �
 ### 4.1 结构与发现外设
 - **先探测、后绑定**。启动时用 `peripheral.getNames()` / `peripheral.find(type)` 查找，找不到就**明确报错并说明该把方块放哪**。
 - 不要硬编码 `"left"` / `"right"`，除非用户明确指定了安装位置。
-- `peripheral.find` 返回 `(name, wrapped)` 两个值，别只接一个还以为是外设对象：
+- `peripheral.find(type)` 返回的是**已包装外设表**（**0 个或多个**），**不返回 name**
+  （出处：CC:T ROM `rom/apis/peripheral.lua` 的 `find()` 里只 `table.insert(results, wrapped)`。
+  老 CC1 文档写的 `(name, wrapped)` 是过时语义，照抄会拿到 nil——本项目踩过这个坑）：
   ```lua
-  local name, station = peripheral.find("Create_Station")
+  local station = peripheral.find("Create_Station")            -- 只要有就返回包装表；没有则 nil
+  local name = peripheral.getName(station)                     -- 要名字用它
+  local monitors = { peripheral.find("monitor") }              -- 多个同名外设：收集全部
+  local filtered = peripheral.find("monitor", function(n, w) return n == "monitor_0" end)
   ```
 - 一个电脑可能有多个同类外设（多块屏/多个蛙港）→ 支持按名字选择，或在文档里说明取第一个。
 - 依赖 addon / ROM API 的程序要**降级可用**：`if not aero then ... end`、`pcall(require, "advanced_math.stats")`，
@@ -220,12 +225,18 @@ code/
 
 1. **装置（contraption）上的电脑**：动力轴承/矿车/电梯等移动结构上的 CC 电脑**原生不能正常工作**，
    需要 CCCCC 等 mod（本实例没装）；Sable 的物理子层级是另一套（`sublevel` API）。遇到"跟着装置走"的需求先确认装了什么。
-2. **外设连接**：外设必须与电脑相邻，或通过有线/无线 modem 组网。`peripheral.find` 只能找到**已连接**的外设。
+2. **外设连接**：外设必须与电脑**相邻**，或与电脑在**同一条有线 modem 网络**上。
+   ⚠️ **无线（Ender）modem 不能远程访问外设**——它只提供 `rednet` 消息收发。
+   `peripheral.find` 只能找到**已连接**的外设。
 3. **事件参数前缀**：Create 原生外设事件第一个参数是外设名（见 4.3）。
 4. **文档笔误**：`speedometer` 事件是 `speed_change`；CC:C Bridge 示例里的 `peripheral.fid`、`setLocked` 是错的。
 5. **Scroller Pane 只能从背面 attach**（CC:C Bridge，本实例未装）；`create_source` 同步频率 1 秒。
 6. **终端字符集**：写中文/符号前先看 `docs/cccbridge/docs/guides/charset.md` 并在游戏内实测。
-7. **同名外设多个**：`peripheral.find` 只返回第一个匹配项；多屏/多蛙港场景要按 `peripheral.getNames()` 遍历选择。
+7. **`peripheral.find` 的返回值**（本项目踩过的最大的坑）：它返回**全部**匹配的**已包装外设表**（0 个或多个），
+   **不返回 name**。写成 `local name, wrapped = peripheral.find("monitor")`（老 CC1 语义）时，
+   只有一个外设的场合 `wrapped` 会是 **nil**，程序就误判"外设不存在"。
+   要名字用 `peripheral.getName(wrapped)`；要按名字筛选用 `find(type, function(name, wrapped) ... end)`；
+   要收集多个用 `{ peripheral.find(type) }`。
 8. **`startup.lua`**：开机自启文件名与位置规则见 `docs/cc-tweaked/doc/reference/startup.md`；自启程序崩溃会挡住 shell，务必自己兜 pcall。
 9. **别把"文档里有"当成"现场能用"**：CC:C Bridge 整套 API 在本实例都不存在；
    addon 外设（Additional Logistics / Diesel Generators / Electro Energetics / Bits 'n' Bobs / CC: Sable）
