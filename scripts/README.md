@@ -6,6 +6,7 @@
 | `dump_create_peripherals.py` | 从 Create 1.21.1 源码导出原生 CC 外设清单（类型名 / Lua 函数 / 事件），用于和 `docs/API_CREATE_NATIVE.md` 比对 |
 | `scan_mods.py` | 扫描**用户实例的 mods 目录**：版本（从实例 json 读 MC/NeoForge）、全部 mod 的 id/version、哪些 mod 与 CC:T / Create 相关 |
 | `dump_jar_peripherals.py` | 从 jar 里挖**实例实际可用的 CC:T 集成面**：外设类型名+方法候选、Lua ROM 附加（全局 API / require 模块）、turtle 升级；`--extract-rom` 可把附加 Lua 文件抽出来存档 |
+| `push_via_proxy.py` | **github.com 直连不通时**（TCP 443 超时）经由 gh-proxy 推送当前分支；token 走环境变量 + 临时 askpass，不落命令行，推完用 `gh api` 核对远端 sha |
 
 ## 用法
 
@@ -28,12 +29,25 @@ python scripts\dump_jar_peripherals.py <某个.jar>              :: 只分析单
 ::   --include-computercraft  连 CC:T 本体一起挖（默认跳过，输出很吵）
 ```
 
+### 推送（github.com 直连不通时）
+
+```bat
+python scripts\push_via_proxy.py                 :: 推送当前分支
+python scripts\push_via_proxy.py --branch main    :: 指定分支
+python scripts\push_via_proxy.py --proxy https://v6.gh-proxy.org/ --repo Mepuru/CreateCC
+```
+
+`git push` 报 `Failed to connect to github.com:443` 时用它：流量走 gh-proxy 转发，
+认证用 `gh auth token`（token 只进环境变量和临时 askpass，不落命令行），
+推完再用 `gh api` 打印远端最新 sha 供核对。
+
 ## 约定
 
 - 退出码：`0` = 成功，`1` = 失败（信息打到 stderr），便于接进任何 CI / 批处理。
 - 只依赖标准库（`argparse` / `subprocess` / `re` / `zipfile` / `json` / `pathlib`），不装任何包。
 - 脚本路径以自身位置推导工程根目录（`Path(__file__).resolve().parents[1]`），可从任意工作目录调用。
   `scan_mods.py` / `dump_jar_peripherals.py` 需要显式 `--mods <实例mods目录>`。
-- 输出统一 UTF-8（Windows 控制台会自动 `reconfigure`，避免中文报 `UnicodeEncodeError`）。
-- 需要本机有 `git` 且在 `PATH` 里（只有 `refresh_docs.py` 需要）；失败时不会留下半成品分支（失败即报错退出）。
+- 输出编码：交互式控制台沿用系统编码（GBK 控制台本就能显示中文），重定向/`--out` 时统一 UTF-8。
+  **别用 PowerShell 5.1 的 `>` 重定向**——它会写成 UTF-16，用 `--out` 代替。
+- 需要本机有 `git`（`refresh_docs.py` / `push_via_proxy.py`）与 `gh` 且已登录（`push_via_proxy.py`）。
 - jar 解析结论是**候选**：类型名/方法名要再用游戏内的 `code/templates/probe_peripherals.lua` 核实。
