@@ -1,0 +1,7 @@
+# 统一用 LF：Lua/Python/Markdown 都按 LF 入库与检出，避免 Windows 上被转成 CRLF
+* text=auto eol=lf
+
+# 二进制（如有）
+*.png binary
+*.jar binary
+*.zip binary

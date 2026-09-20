@@ -1,0 +1,134 @@
+# 安装说明 —— 把文件放进游戏里的电脑
+
+## 0. 放在哪个文件夹？
+
+**不是** Windows 的文件夹，而是**游戏里那台 CC 电脑自己的文件系统**：
+
+| Windows（本仓库） | 游戏电脑内部路径 |
+|---|---|
+| `code/stock_controller/config.lua` | `/stock_controller/config.lua` |
+| `code/stock_controller/main.lua` | `/stock_controller/main.lua` |
+
+- `/` 是电脑的根目录（`rom` 是只读系统盘）。
+- 两个文件**必须在同一目录**：`main.lua` 里用 `require("config")`，它按当前程序所在目录解析。
+- 目录名随便改，但两个文件要一起移动，运行时的命令也要跟着改（例：`stock_controller/main`）。
+
+---
+
+## 1. 方式 A：Ctrl+V 粘贴（推荐，不需要联网）
+
+CC:T 支持把**系统剪贴板**粘贴进终端（触发 `paste` 事件，见 `docs/cc-tweaked/doc/events/paste.md`）。
+
+1. 在电脑 shell 里建目录：
+   ```
+   mkdir /stock_controller
+   ```
+2. 开始编辑配置文件：
+   ```
+   edit /stock_controller/config.lua
+   ```
+3. 切到 Windows，用记事本打开 `config.lua` → `Ctrl+A` `Ctrl+C`。
+4. 回到游戏，在 `edit` 界面按 **Ctrl+V** 粘贴；长文件耐心等它刷完。
+5. 按 **Ctrl** 打开菜单 → 选 **Save** → 再 **Ctrl** → **Exit**（`edit` 的菜单项就是 Save / Run / Print / Exit）。
+6. 同样流程粘贴 `main.lua`：
+   ```
+   edit /stock_controller/main.lua
+   ```
+7. 检查：
+   ```
+   ls /stock_controller
+   ```
+   应看到 `config.lua` 和 `main.lua` 两个文件。
+
+> 粘贴中途出错（缺行/多行）就 `rm /stock_controller/main.lua` 后重新 `edit` 粘贴一遍，别在半成品上改。
+
+---
+
+## 2. 方式 B：让电脑自己下载（需要电脑能上网）
+
+CC:T 自带 `wget` 与 `pastebin`（在 ROM 的 `http` 子目录里，shell 里直接敲名字即可）：
+
+```
+wget <你的URL> /stock_controller/main.lua
+wget <你的URL> /stock_controller/config.lua
+:: 或者
+pastebin get <pastebin代码> /stock_controller/config.lua
+```
+
+- 文件可以先传到 GitHub raw / 自己的 web 服务 / pastebin。
+- 服务端要允许 http：CC:T 默认允许公网域名、默认拒绝私有/本地 IP（拒绝时 `wget` 会报 `Domain not permitted`）。
+  相关设置在存档的 `serverconfig/computercraft-server.toml`。
+
+---
+
+## 3. 方式 C：软盘/磁盘拷贝
+
+适合"已经有一台电脑装好了，要复制到第二台"：
+
+1. 在源电脑上把文件写到磁盘（`drive` 程序挂载，磁盘挂载点通常是 `/disk`）：
+   ```
+   cp /stock_controller/* /disk/stock_controller/
+   ```
+   （`ls`/`cp`/`mv`/`rm` 都是 ROM 里注册的别名，见 `/rom/startup.lua`）
+2. 把磁盘拿到目标电脑，`drive` 挂载后：
+   ```
+   mkdir /stock_controller
+   cp /disk/stock_controller/main.lua /stock_controller/
+   cp /disk/stock_controller/config.lua /stock_controller/
+   ```
+
+> 注意：磁盘里也得先有文件，所以第一次还是得用方式 A 或 B。
+
+---
+
+## 4. 运行
+
+```
+stock_controller/main
+```
+
+或
+
+```
+cd /stock_controller
+main
+```
+
+启动时会打印自检信息，用来确认装对了：
+
+```
+[stock] 仓库控制器启动：1 条规则，轮询 2s，显示=monitor (monitor_0)
+[stock] 显示屏尺寸：29x16（宽 <30 时自动用紧凑排版）
+[stock] 库存查询器：Create_StockTicker｜红石请求器：已连接｜继电器：0 个
+```
+
+## 5. 开机自启（可选）
+
+```
+edit /startup.lua
+```
+写入一行：
+```lua
+shell.run("stock_controller/main")
+```
+程序内部已经兜了 `pcall` 并处理 `terminate`，但自启程序崩溃仍可能挡住 shell，建议先手动跑通再自启。
+
+## 6. 更新文件
+
+覆盖旧文件最稳的做法是先删再粘：
+
+```
+rm /stock_controller/main.lua
+edit /stock_controller/main.lua     :: 重新 Ctrl+V 粘贴新版
+```
+
+## 7. 排错对照
+
+| 现象 | 原因 |
+|---|---|
+| `module 'config' not found` | 两个文件不在同一目录，或文件名不是 `config.lua` |
+| 屏幕所有物品数量为 0 / `NETWORK: ...` | 库存查询器没设成仓库频率；或没贴着/没接入网络 |
+| `下单失败 ... 没有红石请求器` | 请求器没贴着电脑/没接 modem，或频率不对 |
+| 屏幕是灰阶 | 用的是**普通显示器**，只有高级显示器才有 16 色（文字状态仍可读） |
+| `显示屏尺寸：...` 很小、行被截断 | 显示器太小；程序会自动用紧凑排版，或把 `display.widthLimit` 调小 |
+| 界面乱码/问号 | 文件名或路径写了中文；`item`/`address` 的中文是数据、没问题，路径保持 ASCII |

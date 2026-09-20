@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# ── 上游资料库：各自是独立克隆，不随本仓库分发 ───────────────────────────────
+# 克隆本仓库后用 scripts/refresh_docs.py 按需拉取（走 gh-proxy 加速），几秒即可重建。
+docs/create-wiki/
+docs/create-source/
+docs/cc-tweaked/
+docs/cccbridge/
+
+# 从 mod jar 抽出的第三方 Lua 文件（CC: Sable 等）
+# 重建：python scripts/dump_jar_peripherals.py --mods <你的mods目录> --extract-rom docs/rom_extras
+docs/rom_extras/
+
+# 本地临时
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
