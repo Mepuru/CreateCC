@@ -100,6 +100,23 @@ last: Infested Bricks +1024
 
 ❌ **本机没有 Minecraft，程序未在游戏内运行验证**——请按上面 7 步实测，有问题把**报错全文 + 屏幕内容**发我。
 
+## 中文地址自测（`address = "经验"` 到底能不能用）
+
+CC:T 的 Lua 字符串是字节串，传给 Create 时要转成 Java 字符串；**这个转换是否按 UTF-8 解释，
+我无法在离线环境里证实**（Cobalt 运行时是 JarJar 嵌套 jar，编码路径不在证据链上）。
+花 10 秒在游戏里验一下，**用字节比较而不是看屏幕**（屏幕画不出汉字）：
+
+```lua
+local r = peripheral.find("Create_RedstoneRequester")
+r.setAddress("经验")
+local back = r.getAddress()
+print(#back, back == "经验")   -- 期望输出：6   true
+```
+
+- 输出 `6   true` → 往返无损，`config.lua` 保持 `address = "经验"`。
+- 输出不是 `6   true`（例如 `6   false`，或字节数不是 6）→ 说明转换有损：
+  把 **frogport 的地址**和 **`config.lua` 的 `address`** 一起改成 ASCII（例如 `xp`），其余不用动。
+
 ## 已知限制（替换仪表时要注意）
 
 1. **在途数量靠记账**：仪表的 `getPromised()` 是内部 `RequestPromiseQueue`，CC 读不到；

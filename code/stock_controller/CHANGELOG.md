@@ -16,6 +16,8 @@
   （仓库里旧的 `docs/_generated_peripherals.txt` 就是这样，GitHub 上显示为乱码）。
   三个脚本新增 `--out <PATH>`（直接写 UTF-8/LF），文档里的命令全部改用它；
   两份实例快照不再入库，`_generated_peripherals.txt` 已重新生成
+- 待用户实测：中文地址 `经验` 的字节往返（README 里有 10 秒自测脚本）；
+  若 CC:T → Java 的字符串转换有损，回退方案是把 frogport 地址改成 ASCII
 
 ## v0.3.0 (2026-09-20, 未在游戏内验证)
 
