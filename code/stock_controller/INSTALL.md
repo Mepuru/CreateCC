@@ -149,6 +149,38 @@ main
 [stock] ticker: Create_StockTicker | requester: connected | relays: 0
 ```
 
+### 4.1 想在电脑里临时跑一段代码？（shell 不是 Lua）
+
+CraftOS 的 `>` 是 **shell 提示符，不是 Lua 解释器**：把 Lua 代码直接粘进去会得到
+`No such program`（shell 在找一个叫 `local` 的程序）。三种正确姿势：
+
+**① 跑现成的探测脚本（推荐，两行命令）**
+
+```
+wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/templates/probe_peripherals.lua /probe_peripherals.lua
+probe_peripherals
+```
+
+它会打印：电脑信息、ROM 附加 API 是否存在、**每个已连接外设的挂载名 + 类型名 + 方法列表**。
+
+**② 写成文件再运行（多行代码用这个）**
+
+```
+edit probe.lua          :: 粘贴代码 → Ctrl → Save → Ctrl → Exit
+probe
+```
+
+**③ 进 Lua REPL 单行执行**
+
+```
+lua
+```
+```lua
+t = peripheral.find("Create_StockTicker") print(t) for _,n in ipairs(peripheral.getNames()) do print(n, peripheral.getType(n)) end
+```
+> ⚠️ REPL 里每段代码是独立 chunk：**`local` 变量不会保留到下一行**，临时变量请用全局（`t = ...`）。
+> 退出：`exit()`。
+
 ## 5. 开机自启（可选）
 
 ```
