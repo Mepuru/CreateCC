@@ -46,6 +46,10 @@ config.reconcilePackages = true
 --   false       = 当真（确实存在"空仓库"场景时才关掉）
 config.emptyMeansUnknown = true
 
+-- 在途账本超时（秒）：下了单但一直没到货时，账本会永远挂着让程序不再下单。
+-- 设成 >0 后，到达该秒数就把账本清零并告警一次（排查用；确认流程正常后建议关回 0）。
+config.inflightTimeout = 0
+
 -- 程序退出（Ctrl+T）时怎么处理红石输出：
 --   "hold"  = 保持现状（推荐：红石是"库存不足"的告警，不希望在停机时被清掉）
 --   "clear" = 全部归零

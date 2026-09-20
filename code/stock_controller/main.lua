@@ -51,6 +51,7 @@ local POLL = config.pollInterval or 2
 local state = {
   inventory = {},   -- itemName -> 网络在库数量
   ledger = {},      -- itemName -> 已下单但尚未到货的数量（在途）
+  ledgerAt = {},    -- itemName -> 在途账本最后一次变动的时间（用于超时清零）
   elapsed = 0,      -- 程序启动后的秒数（用作冷却计时，避免依赖 os.clock 的 CPU 语义）
   lastOrder = {},   -- itemName -> 上次下单时的 elapsed
   lastPoll = 0,
@@ -266,6 +267,7 @@ local function placeOrder(rule)
   end
 
   state.ledger[rule.item] = (state.ledger[rule.item] or 0) + (amount or 0)
+  state.ledgerAt[rule.item] = state.elapsed
   state.lastOrder[rule.item] = state.elapsed
   state.notice = ("%s +%d"):format(rule.label or rule.item, amount or 0)
   log(("ordered %s x%d (inflight total %d)"):format(rule.item, amount or 0, state.ledger[rule.item]))
@@ -279,6 +281,22 @@ local function decide()
     local projected = have + inflight
     local cooldown = rule.cooldown or config.cooldown or 30
     local last = state.lastOrder[rule.item]
+
+    -- 在途超时：下了单却一直没到货（例如地址送去了别处、或该物品根本不在网上），
+    -- 账本会永远挂着让程序不再下单。开启 inflightTimeout 后到点清零并告警。
+    local timeout = rule.inflightTimeout or config.inflightTimeout or 0
+    if timeout > 0 and inflight > 0 then
+      local since = state.ledgerAt[rule.item] or state.elapsed
+      if (state.elapsed - since) >= timeout then
+        log(("inflight for %s timed out after %ds (still 0 in stock?): ledger reset to 0 - "
+          .. "check the order address and whether the items land on THIS network")
+          :format(rule.item, timeout))
+        state.ledger[rule.item] = 0
+        inflight = 0
+        projected = have
+        saveState()
+      end
+    end
 
     if projected >= (rule.high or rule.low) then
       -- 补货到位，清掉在途账本
@@ -437,6 +455,19 @@ local function render()
     end
     lines[#lines + 1] = fit(text, limit)
     lineColors[#lineColors + 1] = color
+  end
+
+  -- 提示：已经下过单，但这条网络里该物品仍是 0 —— 多半是"货送到别处了"或"这东西不在查询器连的网络上"
+  if state.networkOk then
+    for _, rule in ipairs(config.rules) do
+      local have = state.inventory[rule.item] or 0
+      local inflight = state.ledger[rule.item] or 0
+      if have == 0 and inflight > 0 then
+        lines[#lines + 1] = fit("hint: ordered but 0 in this net", limit)
+        lineColors[#lineColors + 1] = colors.orange
+        break
+      end
+    end
   end
 
   if state.notice then

@@ -21,6 +21,13 @@ local function hr(char, n)
   return string.rep(char or "-", n or 44)
 end
 
+-- 可选参数：想在查询器的网络里查某个物品有多少，就带上物品 id：
+--   probe_peripherals minecraft:infested_stone_bricks
+local targetItem = ...
+if type(targetItem) ~= "string" or targetItem == "" then
+  targetItem = nil
+end
+
 --- 调用函数并返回结果；失败返回 nil + 错误文本
 local function safeCall(fn, ...)
   local ok, a, b, c = pcall(fn, ...)
@@ -111,10 +118,34 @@ else
       entries = entries + 1
     end
     print(("Create_StockTicker: found, network entries = %d"):format(entries))
+
+    -- 列出网络内容（最多 15 条），用来判断"这条网络到底有没有我要的东西"
+    local shown = 0
+    for _, entry in pairs(stock or {}) do
+      if shown >= 15 then
+        print("  ... (truncated)")
+        break
+      end
+      shown = shown + 1
+      print(("  %-44s %s"):format(tostring(entry.name), show(entry.count)))
+    end
+
     if entries == 0 then
       print("  -> network is EMPTY: tune a Stock Link item on the warehouse Stock Link,")
       print("     then right-click the ticker (or place the ticker with the tuned item)")
       print("  -> also make sure the warehouse chunks are loaded")
+    end
+
+    -- 可选：查某个物品在这条网络里有多少（用法：probe_peripherals minecraft:infested_stone_bricks）
+    if targetItem then
+      local count = nil
+      for _, entry in pairs(stock or {}) do
+        if entry.name == targetItem then
+          count = tonumber(entry.count) or -1
+          break
+        end
+      end
+      print(("target %s : %s"):format(targetItem, count and tostring(count) or "NOT IN THIS NETWORK"))
     end
   end
 end
