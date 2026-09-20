@@ -58,6 +58,13 @@ config.emptyMeansUnknown = true
 -- 设成 >0 后，到达该秒数就把账本清零并告警一次（排查用；确认流程正常后建议关回 0）。
 config.inflightTimeout = 0
 
+-- 显示屏按钮：高级显示器最后一行会画 [ORDER] [AUTO] [LOW-] [LOW+]
+--   [ORDER] 立刻下单一次（3 秒防连点）／[AUTO] 自动补货开关／
+--   [LOW-] [LOW+] 现场调目标阈值（high 跟着平移），步长就是下面这个值
+-- 注意：按钮改过的阈值与 AUTO 开关会**存进状态文件**（stateFile），重启后仍生效；
+--       想恢复 config.lua 里的原始数值，删掉状态文件即可（rm /stock_controller/state.tbl）。
+config.buttonLowStep = 1024
+
 -- 程序退出（Ctrl+T）时怎么处理红石输出：
 --   "hold"  = 保持现状（推荐：红石是"库存不足"的告警，不希望在停机时被清掉）
 --   "clear" = 全部归零

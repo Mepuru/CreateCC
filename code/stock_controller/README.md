@@ -129,6 +129,24 @@ last: Infested Bricks +1024
 > print("address = " .. tostring(r.getAddress()))
 > ```
 
+## 显示器按钮（高级显示器，直接上手点）
+
+屏幕**最后一行**是四个按钮（**需要高级显示器**才有触摸事件；普通显示器画得出来但点不动）：
+
+| 按钮 | 作用 | 细节 |
+|---|---|---|
+| `[ORDER]` | **立刻下单一次** | 走和自动补货同一条下单路径（`setRequest` + `request()` / `requestFiltered`）；**3 秒防连点**，重复点会提示 `please wait a few seconds` |
+| `[AUTO]` | **自动补货开关** | 绿色=开，红色=关；关掉后程序只读库存+刷新屏幕，不再自动下单。关闭时状态行会显示 `AUTO OFF` |
+| `[LOW-]` | 目标阈值 −1024 | `low` 减，`high` 保持同样的滞回宽度一起平移 |
+| `[LOW+]` | 目标阈值 +1024 | 同上 |
+
+- 倒数第二行显示操作提示/反馈（例如 `manual order: Infested Stone`、`target: low 7168 / high 9216`）。
+- 步长由 `config.buttonLowStep` 控制（默认 1024）。
+- **改动会持久化**：按钮调过的阈值和 AUTO 开关写进状态文件（`config.stateFile`），重启后仍然生效。
+  想回到 `config.lua` 里的原始值，删掉状态文件即可：`rm /stock_controller/state.tbl`。
+- 触摸事件是 `monitor_touch`（参数：显示器外设名, x, y，见 https://tweaked.cc/event/monitor_touch.html）；
+  程序只响应**自己那块显示器**上的点击，800ms 内重复触摸会被忽略。
+
 ## 已知限制（替换仪表时要注意）
 
 1. **在途数量靠记账**：仪表的 `getPromised()` 是内部 `RequestPromiseQueue`，CC 读不到；

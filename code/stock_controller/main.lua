@@ -52,12 +52,17 @@ local state = {
   inventory = {},   -- itemName -> 网络在库数量
   ledger = {},      -- itemName -> 已下单但尚未到货的数量（在途）
   ledgerAt = {},    -- itemName -> 在途账本最后一次变动的时间（用于超时清零）
+  lowOverride = {}, -- itemName -> 显示器按钮调过的 low 覆盖值（会存进状态文件）
+  auto = true,      -- 自动补货开关（显示器 [AUTO] 按钮可切）
   elapsed = 0,      -- 程序启动后的秒数（用作冷却计时，避免依赖 os.clock 的 CPU 语义）
   lastOrder = {},   -- itemName -> 上次下单时的 elapsed
   lastPoll = 0,
   networkOk = false,
   lastError = nil,
   notice = nil,
+  buttons = {},     -- 本帧的按钮区域（渲染时重建，触摸时命中测试）
+  touchMsg = nil,   -- 触摸反馈（下次渲染显示一行）
+  lastTouch = 0,    -- 上次触摸的毫秒时间戳（防连点）
 }
 
 -- 外设句柄（rebind 时更新）
@@ -76,7 +81,11 @@ local function saveState()
   if not handle then
     return false
   end
-  handle.write(textutils.serialize({ ledger = state.ledger }))
+  handle.write(textutils.serialize({
+    ledger = state.ledger,
+    lowOverride = state.lowOverride,
+    auto = state.auto,
+  }))
   handle.close()
   return true
 end
@@ -93,14 +102,44 @@ local function loadState()
   local raw = handle.readAll()
   handle.close()
   local ok, parsed = pcall(textutils.unserialize, raw)
-  if ok and type(parsed) == "table" and type(parsed.ledger) == "table" then
-    state.ledger = parsed.ledger
-    local count = 0
-    for _ in pairs(state.ledger) do
-      count = count + 1
+  if ok and type(parsed) == "table" then
+    if type(parsed.ledger) == "table" then
+      state.ledger = parsed.ledger
+      local count = 0
+      for _ in pairs(state.ledger) do
+        count = count + 1
+      end
+      if count > 0 then
+        log(("restored %d inflight entries"):format(count))
+      end
     end
-    if count > 0 then
-      log(("restored %d inflight entries"):format(count))
+    if type(parsed.lowOverride) == "table" then
+      state.lowOverride = parsed.lowOverride
+      local count = 0
+      for _ in pairs(state.lowOverride) do
+        count = count + 1
+      end
+      if count > 0 then
+        log(("restored %d threshold override(s) from the monitor buttons"):format(count))
+      end
+    end
+    if parsed.auto ~= nil then
+      state.auto = parsed.auto and true or false
+      if not state.auto then
+        log("auto restock is OFF (was turned off from the monitor)")
+      end
+    end
+  end
+end
+
+--- 启动时把显示器上调过的阈值覆盖值套用到 rules 上（high 跟着平移，保持滞回宽度）
+local function applyOverrides()
+  for _, rule in ipairs(config.rules) do
+    local override = state.lowOverride[rule.item]
+    if type(override) == "number" and override >= 0 then
+      local span = (rule.high or rule.low) - rule.low
+      rule.low = math.floor(override)
+      rule.high = rule.low + span
     end
   end
 end
@@ -279,6 +318,9 @@ local function placeOrder(rule)
 end
 
 local function decide()
+  if state.auto == false then
+    return   -- 显示器上把自动补货关掉了（[AUTO] 按钮）
+  end
   for _, rule in ipairs(config.rules) do
     local have = state.inventory[rule.item] or 0
     local inflight = state.ledger[rule.item] or 0
@@ -381,6 +423,121 @@ local function reconcilePackage(package)
   end
 end
 
+-- 显示器按钮（高级显示器，触摸触发 monitor_touch 事件） ---------------------
+-- 布局：屏幕最后一行放 [ORDER] [AUTO] [LOW-] [LOW+]；倒数第二行显示提示/反馈。
+-- 出处：https://tweaked.cc/event/monitor_touch.html（事件参数：外设名, x, y）
+local TOUCH_COOLDOWN_MS = 800
+local LOW_STEP = config.buttonLowStep or 1024
+local MANUAL_ORDER_COOLDOWN = 3   -- 秒：手动下单防连点
+
+local function touchNow()
+  local ok, ms = pcall(os.epoch, "utc")
+  if ok and type(ms) == "number" then
+    return ms
+  end
+  return state.elapsed * 1000
+end
+
+--- 手动下单一次（带防连点）
+local function manualOrder(rule)
+  local last = state.lastOrder[rule.item]
+  if last and (state.elapsed - last) < MANUAL_ORDER_COOLDOWN then
+    state.touchMsg = "please wait a few seconds"
+    return
+  end
+  placeOrder(rule)
+  state.touchMsg = ("manual order: %s"):format(rule.label or rule.item)
+end
+
+local function toggleAuto()
+  state.auto = not state.auto
+  state.touchMsg = state.auto and "auto restock: ON" or "auto restock: OFF"
+  log("auto restock is now " .. (state.auto and "ON" or "OFF"))
+  saveState()
+end
+
+--- 现场调阈值：low ± LOW_STEP，high 跟着平移（保持滞回宽度），并存进状态文件
+local function bumpLow(rule, delta)
+  local span = rule.high - rule.low
+  local low = math.max(0, rule.low + delta)
+  rule.low = low
+  rule.high = low + span
+  state.lowOverride[rule.item] = low
+  state.touchMsg = ("target: low %d / high %d"):format(rule.low, rule.high)
+  log(("threshold from monitor: %s low=%d high=%d"):format(rule.item, rule.low, rule.high))
+  saveState()
+end
+
+local function handleButton(id)
+  local rule = config.rules[1]
+  if not rule then
+    return
+  end
+  if id == "order" then
+    manualOrder(rule)
+  elseif id == "auto" then
+    toggleAuto()
+  elseif id == "low-" then
+    bumpLow(rule, -LOW_STEP)
+  elseif id == "low+" then
+    bumpLow(rule, LOW_STEP)
+  end
+end
+
+--- 触摸命中测试（x/y 为显示器字符坐标）
+local function handleTouch(x, y)
+  local now = touchNow()
+  if now - state.lastTouch < TOUCH_COOLDOWN_MS then
+    return
+  end
+  state.lastTouch = now
+  for _, btn in ipairs(state.buttons) do
+    if btn.y == y and x >= btn.x and x < (btn.x + #btn.label) then
+      handleButton(btn.id)
+      return
+    end
+  end
+end
+
+--- 计算本帧按钮区域（渲染时调用）
+local function buildButtons(y, width)
+  local full = {
+    { id = "order", label = "[ORDER]" },
+    { id = "auto", label = "[AUTO]" },
+    { id = "low-", label = "[LOW-]" },
+    { id = "low+", label = "[LOW+]" },
+  }
+  local short = {
+    { id = "order", label = "[ORD]" },
+    { id = "auto", label = "[AUT]" },
+    { id = "low-", label = "[L-]" },
+    { id = "low+", label = "[L+]" },
+  }
+  local function total(list)
+    local n = 0
+    for _, b in ipairs(list) do
+      n = n + #b.label + 1
+    end
+    return n
+  end
+
+  local buttons = (total(full) <= width) and full or short
+  local x = 1
+  for _, btn in ipairs(buttons) do
+    btn.x = x
+    btn.y = y
+    if btn.id == "order" then
+      btn.bg, btn.fg = colors.green, colors.black
+    elseif btn.id == "auto" then
+      btn.bg, btn.fg = state.auto and colors.lime or colors.red, colors.black
+    else
+      btn.bg, btn.fg = colors.grey, colors.white
+    end
+    x = x + #btn.label + 1
+  end
+  return buttons
+end
+
 -- 显示 ---------------------------------------------------------------------
 local function shortLabel(rule)
   local label = rule.label or rule.item
@@ -400,14 +557,20 @@ local function shortError(text)
 end
 
 local function render()
-  local ok, width = pcall(display.getSize)
+  local ok, width, height = pcall(display.getSize)
   if not ok or type(width) ~= "number" then
     display, displayKind = term, "term"
     width = select(1, term.getSize())
+    height = select(2, term.getSize())
+  end
+  if type(height) ~= "number" then
+    height = 20
   end
   local limit = math.min(width, (config.display or {}).widthLimit or width)
   local wide = limit >= 30          -- 窄屏（比如 1x1/2x2 显示器）用紧凑排版
   local canColor = (config.display or {}).color and display.setTextColour ~= nil
+  -- 按钮只在真正的 CC 显示器上画（高级显示器才会上报 monitor_touch）
+  local showButtons = (displayKind == "monitor") and display.setBackgroundColour ~= nil and height >= 6
 
   -- 注意：这里不能把局部变量起名 colors，那会遮蔽 CC:T 的全局 colors API
   local lines, lineColors = {}, {}
@@ -424,9 +587,11 @@ local function render()
   if not state.networkOk then
     status = "NET: " .. shortError(state.lastError or "no data")
   elseif wide then
-    status = ("upd %ds ago  inflight %d"):format(state.elapsed - state.lastPoll, inFlightTotal)
+    status = ("upd %ds ago  inflight %d%s"):format(
+      state.elapsed - state.lastPoll, inFlightTotal, state.auto and "" or "  AUTO OFF")
   else
-    status = ("upd %ds  inf %d"):format(state.elapsed - state.lastPoll, inFlightTotal)
+    status = ("upd %ds  inf %d%s"):format(
+      state.elapsed - state.lastPoll, inFlightTotal, state.auto and "" or "  AUTO OFF")
   end
   lines[#lines + 1] = fit(status, limit)
   lineColors[#lineColors + 1] = colors.lightGrey
@@ -481,22 +646,53 @@ local function render()
 
   local okRender = pcall(function()
     display.clear()
+    if canColor then
+      display.setTextColour(colors.white)
+    end
+    local contentLimit = showButtons and (height - 2) or height
     for y, line in ipairs(lines) do
+      if y > contentLimit then
+        break
+      end
       display.setCursorPos(1, y)
       if canColor then
         display.setTextColour(lineColors[y] or colors.white)
       end
       display.write(line)
     end
-    if canColor then
+
+    if showButtons then
+      -- 倒数第二行：触摸反馈 / 操作提示
+      display.setCursorPos(1, height - 1)
+      if canColor then
+        display.setTextColour(colors.lightGrey)
+      end
+      display.write(fit(state.touchMsg or "buttons: order / auto / target - / +", limit))
+      if canColor then
+        display.setTextColour(colors.white)
+      end
+
+      -- 最后一行：按钮（反色绘制，触摸坐标就是这里的 x/y）
+      state.buttons = buildButtons(height, width)
+      for _, btn in ipairs(state.buttons) do
+        display.setCursorPos(btn.x, btn.y)
+        display.setBackgroundColour(btn.bg)
+        display.setTextColour(btn.fg)
+        display.write(btn.label)
+      end
+      display.setBackgroundColour(colors.black)
       display.setTextColour(colors.white)
+    else
+      state.buttons = {}
     end
+
     if display.update then
       display.update()   -- Create_DisplayLink 需要显式刷新
     end
   end)
   if not okRender then
     display, displayKind = term, "term"
+    state.buttons = {}
   end
 end
 
@@ -529,6 +725,7 @@ end
 
 -- 主循环 -------------------------------------------------------------------
 loadState()
+applyOverrides()
 rebind()
 
 local relayCount = 0
@@ -551,9 +748,19 @@ log("ticker: %s | requester: %s | relays: %d",
 
 checkAddresses()
 
+-- 按钮需要高级显示器：普通显示器不会上报 monitor_touch
+if displayKind == "monitor" then
+  local okColour, isColour = pcall(display.isColour)
+  if okColour and isColour == false then
+    log("note: this is a NORMAL monitor - touch buttons need an ADVANCED monitor to work")
+  else
+    log("touch buttons enabled (order / auto / target - / +) on the monitor's bottom row")
+  end
+end
+
 local timer = os.startTimer(POLL)
 while true do
-  local event, a, b = os.pullEvent()
+  local event, a, b, c = os.pullEvent()
 
   if event == "terminate" then
     log("terminate received; saving state and exiting")
@@ -573,6 +780,12 @@ while true do
     end
     render()
     timer = os.startTimer(POLL)
+  elseif event == "monitor_touch" then
+    -- 事件参数：显示器外设名, x, y（见 tweaked.cc/event/monitor_touch.html）
+    if state.displayName == "?" or state.displayName == "none" or a == state.displayName then
+      handleTouch(b, c)
+      render()   -- 立刻刷新，让反馈看得见
+    end
   elseif event == "peripheral" or event == "peripheral_detach" then
     log(("peripheral change (%s %s), rebinding"):format(event, tostring(a)))
     rebind()
