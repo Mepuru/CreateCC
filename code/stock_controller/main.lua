@@ -31,7 +31,7 @@ local LOG = "[stock] "
 
 -- 版本号：屏幕上会显示短版本（v0.7），启动日志会打印完整版本。
 -- 排查"改了文件却没生效"时先看这里——CC:T 把程序读进内存，替换文件后必须重启程序。
-local VERSION = "0.7.1"
+local VERSION = "0.7.2"
 local SHORT_VERSION = VERSION:match("^%d+%.%d+") or VERSION
 
 local function log(fmt, ...)
@@ -251,6 +251,16 @@ local function orderViaRequester(rule)
   if not requester then
     return nil, "no redstone requester"
   end
+
+  -- 地址为空时**不要下单**：包会没有目的地（默认 setAddressOnOrder=false，程序不写地址，
+  -- 所以地址必须由你在请求器 GUI 里设置）。用 stock_controller/setaddr 可以查看/设置。
+  if config.setAddressOnOrder == false then
+    local okCur, current = pcall(requester.getAddress)
+    if okCur and (current == nil or current == "") then
+      return nil, "NO ADDRESS - set it in the requester GUI (or use ASCII + setAddressOnOrder=true)"
+    end
+  end
+
   local ok, err = pcall(function()
     -- ⚠️ 地址只能用 ASCII：CC:T 把 Lua 字符串按字节交给 Java，
     --    中文字符串会失真（实测：请求器的地址栏变成乱码，包裹就送不到目的地）。
@@ -776,7 +786,7 @@ if displayKind == "monitor" then
   if okColour and isColour == false then
     log("note: this is a NORMAL monitor - touch buttons need an ADVANCED monitor to work")
   else
-    log("touch buttons enabled (order / auto / target - / +) on the monitor's bottom row")
+    log("touch buttons enabled (order / auto / target - / +) just below the data on the monitor")
   end
 end
 

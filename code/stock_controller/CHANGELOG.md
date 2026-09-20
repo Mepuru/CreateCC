@@ -1,5 +1,17 @@
 # CHANGELOG — stock_controller
 
+## v0.7.2 (2026-09-20, 未在游戏内验证)
+
+用户已成功更新到 v0.7.1（日志确认），剩下的唯一阻塞是**请求器地址为空**。为此：
+
+- **地址为空时拒绝下单**：`setAddressOnOrder=false` 且 `getAddress()` 为空串时不下单，
+  返回 `NO ADDRESS - set it in the requester GUI (or use ASCII + setAddressOnOrder=true)`，
+  避免寄出一堆没有目的地的包（屏幕上会以 `NET: ...` 显示）
+- 新增 **`setaddr.lua`**：`stock_controller/setaddr <地址>` 写地址并**读回校验**
+  （打印 `#长度` 与 `match=true/false`），用来一锤定音判断"中文地址到底会不会被传坏"
+- 修掉一处过期日志文案（"on the monitor's bottom row" → "just below the data"）
+- README 补两个随身工具（setaddr / update）与第三道防护说明
+
 ## v0.7.1 (2026-09-20, 未在游戏内验证)
 
 - 新增 **`update.lua`（一键更新器）**：`stock_controller/update [--keep]` 下载 main.lua/config.lua，

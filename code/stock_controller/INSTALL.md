@@ -227,7 +227,7 @@ wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/stock_controlle
 | `module 'config' not found` | 两个文件不在同一目录，或文件名不是 `config.lua` |
 | 屏幕上的按钮点不动 | 显示器是**普通**显示器（只有高级显示器才有触摸事件）；程序启动日志会提示 `touch buttons need an ADVANCED monitor` |
 | 屏幕所有物品数量为 0（旧版）或 `NET: EMPTY NETWORK (freq?)` | 查询器**没接入仓库那条物流网络**（不是"频率"问题）→ 见 §3.6；也可能是仓库区块没加载 |
-| **包裹目的地显示乱码 / 送不到** | 程序用 `setAddress(中文)` 写坏地址了：CC:T 按字节传字符串，非 ASCII 失真。**用 ASCII 地址**，或在请求器 GUI 里填地址 + 保持 `config.setAddressOnOrder = false`（默认）。详见项目 README「地址为什么不能是中文」 |
+| **包裹目的地显示乱码 / 送不到 / 屏幕显示 `NET: NO ADDRESS ...`** | 程序不写中文地址（CC:T 按字节传字符串，非 ASCII 会失真），所以地址要**你自己设**：① 推荐把 frogport 地址改成 ASCII（如 `exp`），`config.lua` 写 `address = "exp"` + `setAddressOnOrder = true`；② 或在红石请求器 GUI 里填地址、保持 `setAddressOnOrder = false`（默认）。用 `stock_controller/setaddr <地址>` 可写入并读回校验 |
 | 网络里有货、但某个物品一直是 0 | 物品 id 写错了。用 `probe_peripherals <物品id>` 查：例如虫蚀石头是 `minecraft:infested_stone`（**不是** `infested_stone_bricks`） |
 | `下单失败 ... 没有红石请求器` | 请求器没贴着电脑/没接 modem，或它没在这条物流网络上（同样用 Stock Link 物品调谐） |
 | 屏幕是灰阶 | 用的是**普通显示器**，只有高级显示器才有 16 色（文字状态仍可读） |

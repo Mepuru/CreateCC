@@ -118,10 +118,23 @@ last: Infested Bricks +1024
 | **B（保持中文地址）** | 在**红石请求器的 GUI** 里把目的地填成 `经验`；`config.setAddressOnOrder` 保持 `false`（默认），程序**不覆盖**它 | 不动现有命名；缺点是地址只能手填 |
 | C | 用 `Create_StockTicker.requestFiltered(address, ...)` 直连下单 | 同样传字符串，**中文一样会坏**，所以也需要 ASCII 地址 |
 
-程序内置两道防护：
+程序内置三道防护：
 
 - 启动时若 `address` 含非 ASCII 且 `setAddressOnOrder` 没关 → 终端打印 WARNING（告诉你会乱码）；
-- `setAddressOnOrder = false` 时会打印"请求器当前地址 / 配置里期望的地址"，不一致就提醒你去 GUI 里改。
+- `setAddressOnOrder = false` 时会打印"请求器当前地址 / 配置里期望的地址"，不一致就提醒你去 GUI 里改；
+- **地址为空时拒绝下单**：`setAddressOnOrder = false` 且 `requester.getAddress()` 是空串时，
+  不会发包（否则会寄出一堆没有目的地的包），屏幕上显示 `NET: NO ADDRESS - set it in the requester GUI...`。
+
+### 两个随身小工具
+
+```
+stock_controller/setaddr exp     :: 给请求器写地址并**读回校验**（ASCII 应 match=true）
+stock_controller/setaddr 经验     :: 想确认中文会不会坏，就看这行的 match/#长度
+stock_controller/update          :: 一键更新 main.lua + config.lua，并打印新版本号
+```
+
+`setaddr` 用"回读长度 + 是否完全相等"两个判据下结论，**不依赖屏幕能不能显示汉字**——
+这也是当初判断"中文地址不可用"的最终验证手段。
 
 > 检查请求器现在到底存了什么（乱码会以 Latin-1 字符显示出来，屏幕能画）：
 > ```lua
