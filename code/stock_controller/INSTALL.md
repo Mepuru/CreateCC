@@ -192,14 +192,33 @@ shell.run("stock_controller/main")
 ```
 程序内部已经兜了 `pcall` 并处理 `terminate`，但自启程序崩溃仍可能挡住 shell，建议先手动跑通再自启。
 
-## 6. 更新文件
+## 6. 更新文件（推荐用一键更新器）
 
-覆盖旧文件最稳的做法是先删再粘：
+CC:T 是**把程序读进内存运行**的：替换文件**不会**影响正在跑的实例，必须 `Ctrl+T` 停下再重新运行。
+为了避免"以为更新了其实没有"，项目里带了一个更新器：
+
+```
+:: 第一次先把它下下来
+wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/stock_controller/update.lua /stock_controller/update.lua
+
+:: 以后每次更新只跑这一条
+stock_controller/update              :: 更新 main.lua + config.lua
+stock_controller/update --keep       :: 只更新 main.lua（保留你手改过的 config.lua）
+```
+
+它会下载文件、**读回并打印 `main.lua` 里的版本号**，最后提醒你重启程序。看到
+`installed main.lua version: 0.7.0` 才算真的换上了；若是 `has NO VERSION line - it is an OLD build`，说明下载失败。
+
+手动更新（等价做法，注意**先删再下**；也适用于用 Ctrl+V 粘贴的场景）：
 
 ```
 rm /stock_controller/main.lua
-edit /stock_controller/main.lua     :: 重新 Ctrl+V 粘贴新版
+wget https://raw.githubusercontent.com/Mepuru/CreateCC/main/code/stock_controller/main.lua /stock_controller/main.lua
+:: 或者：edit /stock_controller/main.lua 重新粘贴
 ```
+
+**怎么确认跑的是新版**：屏幕标题会带版本（例如 `STOCK CONTROL  v0.7`），
+启动日志第一行是 `stock_controller v0.7.0 starting (...)`。
 
 ## 7. 排错对照
 
